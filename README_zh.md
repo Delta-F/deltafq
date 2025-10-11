@@ -106,7 +106,7 @@ result.plot()
 
 ## 文档
 
-- **使用指南**: [docs/GUIDE.md](docs/GUIDE.md)
+- **使用指南**: [docs/GUIDE_zh.md](docs/GUIDE_zh.md) | [English Guide](docs/GUIDE.md)
 - **API参考**: [docs/API.md](docs/API.md)
 - **开发指南**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - **更新日志**: [docs/CHANGELOG.md](docs/CHANGELOG.md)

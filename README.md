@@ -106,7 +106,7 @@ Check the `examples/` directory for more example code:
 
 ## Documentation
 
-- **User Guide**: [docs/GUIDE.md](docs/GUIDE.md)
+- **User Guide**: [docs/GUIDE.md](docs/GUIDE.md) | [中文指南](docs/GUIDE_zh.md)
 - **API Reference**: [docs/API.md](docs/API.md)
 - **Development Guide**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - **Changelog**: [docs/CHANGELOG.md](docs/CHANGELOG.md)

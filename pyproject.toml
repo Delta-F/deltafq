@@ -48,7 +48,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/Delta-F/deltafq"
-Documentation = "https://deltafq.readthedocs.io"
+Documentation = "https://github.com/Delta-F/deltafq/tree/main/docs"
 Repository = "https://github.com/Delta-F/deltafq"
 PyPI = "https://pypi.org/project/deltafq/"
 "Bug Tracker" = "https://github.com/Delta-F/deltafq/issues"
