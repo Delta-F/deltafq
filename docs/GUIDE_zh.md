@@ -1,13 +1,13 @@
-# DeltaFQ User Guide
+# DeltaFQ 使用指南
 
-## Installation
+## 安装
 
-### PyPI Installation (Recommended)
+### PyPI 安装（推荐）
 ```bash
 pip install deltafq
 ```
 
-### Source Installation
+### 源码安装
 ```bash
 git clone https://github.com/Delta-F/deltafq.git
 cd deltafq
@@ -16,9 +16,9 @@ pip install -e .
 
 ---
 
-## Quick Start
+## 快速开始
 
-### 1. Get Data and Calculate Indicators
+### 1. 获取数据并计算指标
 
 ```python
 import deltafq as dfq
@@ -63,37 +63,37 @@ result.plot()  # 需要 matplotlib
 
 ---
 
-## Core Modules
+## 核心模块
 
-### Data Module (data)
+### 数据模块 (data)
 ```python
-# Get daily data
+# 获取日线数据
 data = dfq.data.get_stock_daily(symbol, start, end)
 ```
 
-### Technical Indicators (indicators)
+### 技术指标 (indicators)
 ```python
-# Trend indicators
+# 趋势指标
 ma = dfq.indicators.SMA(data['close'], 20)
 ema = dfq.indicators.EMA(data['close'], 20)
 macd = dfq.indicators.MACD(data['close'])
 
-# Momentum indicators
+# 动量指标
 rsi = dfq.indicators.RSI(data['close'], 14)
 
-# Volatility indicators
+# 波动率指标
 boll = dfq.indicators.BOLL(data['close'], 20)
 ```
 
-### Strategy Framework (strategy)
+### 策略框架 (strategy)
 ```python
 class MyStrategy(dfq.strategy.Strategy):
     def on_bar(self, bar):
-        # Implement trading logic
+        # 实现交易逻辑
         pass
 ```
 
-### Backtest Engine (backtest)
+### 回测引擎 (backtest)
 ```python
 engine = dfq.backtest.BacktestEngine(
     initial_cash=100000,
@@ -103,21 +103,21 @@ engine = dfq.backtest.BacktestEngine(
 result = engine.run(data, strategy)
 ```
 
-### Risk Management (risk)
+### 风险管理 (risk)
 ```python
-# Risk metrics
+# 风险指标
 max_dd = dfq.risk.calculate_max_drawdown(returns)
 var = dfq.risk.calculate_var(returns, confidence=0.95)
 ```
 
-### Performance Analysis (performance)
+### 绩效分析 (performance)
 ```python
-# Performance metrics
+# 绩效指标
 annual_return = dfq.performance.calculate_annual_return(returns)
 sharpe = dfq.performance.calculate_sharpe_ratio(returns)
 ```
 
-### Parameter Optimization (optimization)
+### 参数优化 (optimization)
 ```python
 optimizer = dfq.optimization.GridSearchOptimizer()
 best_params = optimizer.optimize(param_grid, objective_func)
@@ -125,14 +125,14 @@ best_params = optimizer.optimize(param_grid, objective_func)
 
 ---
 
-## Complete Examples
+## 完整示例
 
-Check the [examples/](../examples/) directory:
-- `ma_strategy.py` - Dual Moving Average Strategy
-- `macd_strategy.py` - MACD Strategy
-- `optimization_example.py` - Parameter Optimization
+查看 [examples/](../examples/) 目录：
+- `ma_strategy.py` - 双均线策略
+- `macd_strategy.py` - MACD策略
+- `optimization_example.py` - 参数优化
 
-Run examples:
+运行示例：
 ```bash
 cd examples
 python ma_strategy.py
@@ -140,33 +140,32 @@ python ma_strategy.py
 
 ---
 
-## Testing
+## 测试
 
-Run complete workflow test:
+运行完整流程测试：
 ```bash
 python tests/test_full_workflow.py
 ```
 
-Run all tests:
+运行所有测试：
 ```bash
 pytest
 ```
 
 ---
 
-## More Resources
+## 更多资源
 
-- [API Reference](API.md)
-- [Development Guide](CONTRIBUTING.md)
-- [Changelog](CHANGELOG.md)
+- [API参考](API.md)
+- [开发指南](CONTRIBUTING.md)
+- [更新日志](CHANGELOG.md)
 - [GitHub](https://github.com/Delta-F/deltafq)
 - [PyPI](https://pypi.org/project/deltafq/)
 
 ---
 
-## Important Notes
+## 重要提示
 
-1. Current version uses mock data, suitable for learning and testing
-2. Backtest engine is simplified, requires stricter testing before live trading
-3. Quantitative trading involves risk, for educational and research purposes only
-
+1. 当前版本使用模拟数据，适合学习和测试
+2. 回测引擎是简化版，实盘交易前需更严格测试
+3. 量化交易存在风险，仅供学习研究使用

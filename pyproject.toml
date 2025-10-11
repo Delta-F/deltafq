@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deltafq"
-version = "0.1.0"
-description = "专业的Python量化交易库"
+version = "0.1.1"
+description = "A professional Python quantitative trading library"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
