@@ -24,15 +24,46 @@ pip install deltafq
 import deltafq as dfq
 
 # Fetch market data
-data = dfq.data.fetch_stock_data('AAPL', start='2023-01-01')
+fetcher = dfq.data.DataFetcher()
+fetcher.initialize()
+data = fetcher.fetch_stock_data('AAPL', '2023-01-01', '2023-12-31')
+
+# Clean and validate data
+cleaner = dfq.data.DataCleaner()
+cleaner.initialize()
+cleaned_data = cleaner.clean_price_data(data)
+
+validator = dfq.data.DataValidator()
+validator.initialize()
+validator.validate_price_data(cleaned_data)
 
 # Create and test a strategy
-strategy = dfq.strategy.MovingAverageStrategy(fast_period=10, slow_period=20)
-results = dfq.backtest.run_backtest(strategy, data)
+class SimpleMAStrategy(dfq.strategy.BaseStrategy):
+    def __init__(self, fast_period=10, slow_period=20):
+        super().__init__()
+        self.fast_period = fast_period
+        self.slow_period = slow_period
+    
+    def generate_signals(self, data):
+        fast_ma = data['close'].rolling(window=self.fast_period).mean()
+        slow_ma = data['close'].rolling(window=self.slow_period).mean()
+        import numpy as np
+        signals = np.where(fast_ma > slow_ma, 1, np.where(fast_ma < slow_ma, -1, 0))
+        return pd.Series(signals, index=data.index)
+
+strategy = SimpleMAStrategy()
+strategy.initialize()
+results = strategy.run(cleaned_data)
+
+# Run backtest
+engine = dfq.backtest.BacktestEngine(initial_capital=100000)
+engine.initialize()
+backtest_results = engine.run_backtest(strategy, cleaned_data)
 
 # Run paper trading
 simulator = dfq.trading.PaperTradingSimulator(initial_capital=100000)
-simulator.run_strategy(strategy, data)
+simulator.initialize()
+portfolio_summary = simulator.run_strategy(strategy, cleaned_data)
 ```
 
 ## Documentation
