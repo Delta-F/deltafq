@@ -5,7 +5,7 @@ This library provides tools for strategy development, backtesting,
 paper trading, and live trading.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "DeltaF"
 
 # Import core modules

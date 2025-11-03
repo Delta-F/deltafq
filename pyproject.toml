@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deltafq"
-version = "0.1.0"
+version = "0.2.0"
 description = "A comprehensive Python quantitative finance library"
 authors = [
-    {name = "DeltaF", email = ""}
+    {name = "DeltaF", email = "leek_li@outlook.com"}
 ]
 readme = "README.md"
 license = {text = "MIT"}

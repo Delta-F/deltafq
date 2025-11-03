@@ -11,7 +11,7 @@ from .config import Config
 class BaseComponent(ABC):
     """Base class for all DeltaFQ components."""
     
-    def __init__(self, name: str = None, config: Config = None):
+    def __init__(self, name: str = None, config: Config = None, **kwargs):
         """Initialize base component."""
         self.name = name or self.__class__.__name__
         self.config = config or Config()
