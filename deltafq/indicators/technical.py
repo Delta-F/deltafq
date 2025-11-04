@@ -10,11 +10,6 @@ from ..core.base import BaseComponent
 class TechnicalIndicators(BaseComponent):
     """Basic technical indicators."""
     
-    def __init__(self, **kwargs):
-        """Initialize technical indicators."""
-        super().__init__(**kwargs)
-        self.logger.info("TechnicalIndicators initialized")
-    
     def initialize(self) -> bool:
         """Initialize technical indicators."""
         self.logger.info("Initializing technical indicators")

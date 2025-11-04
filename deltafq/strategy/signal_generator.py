@@ -100,7 +100,6 @@ class SignalGenerator(BaseComponent):
             indicators = TechnicalIndicators()
             bands = indicators.bollinger_bands(data['Close'], period=period, std_dev=std_dev)
         else:
-            # Basic validation
             required_cols = {'upper', 'middle', 'lower'}
             missing = required_cols - set(bands.columns)
             if missing:
@@ -112,25 +111,18 @@ class SignalGenerator(BaseComponent):
         signals = pd.Series(0, index=data.index, dtype=int)
         
         if method == 'touch':
-            # Buy when price touches or breaks below lower band, sell when touches or breaks above upper band
             buy_condition = price <= bands['lower']
             sell_condition = price >= bands['upper']
             signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
         
         elif method == 'breakout':
-            # Trend-following: Buy on breakout above upper band, sell on breakdown below lower band
-            # This assumes continuation of trend
             buy_condition = price > bands['upper']
             sell_condition = price < bands['lower']
             signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
         
         elif method == 'mean_reversion':
-            # Mean reversion strategy: Buy when price touches lower band and starts bouncing,
-            # sell when price touches upper band and starts falling
-            # Buy: price touches lower band and price is rising (bounce back)
             price_change = price.diff()
             buy_signal = (price <= bands['lower']) & (price_change > 0)
-            # Sell: price touches upper band and price is falling (pull back)
             sell_signal = (price >= bands['upper']) & (price_change < 0)
             signals = np.where(buy_signal, 1, np.where(sell_signal, -1, 0))
 

@@ -3,96 +3,119 @@ Backtesting engine for DeltaFQ.
 """
 
 import pandas as pd
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple, List
 from ..core.base import BaseComponent
-from ..core.exceptions import BacktestError
+from ..trading.simulator import PaperTradingSimulator
+from ..data.storage import DataStorage
 
 
 class BacktestEngine(BaseComponent):
     """Backtesting engine for strategy testing."""
     
-    def __init__(self, initial_capital: float = 100000, commission: float = 0.001, **kwargs):
+    def __init__(self, initial_capital: float = 1000000, commission: float = 0.001, 
+                 slippage: Optional[float] = None, storage: Optional[DataStorage] = None,
+                 storage_path: str = None, **kwargs):
         """Initialize backtest engine."""
         super().__init__(**kwargs)
         self.initial_capital = initial_capital
         self.commission = commission
+        self.slippage = slippage
         self.results = None
+        # Use PaperTradingSimulator for trade execution
+        self.simulator = PaperTradingSimulator(
+            initial_capital=initial_capital,
+            commission=commission,
+            slippage=slippage
+        )
+        # Data storage
+        self.storage = storage or DataStorage(base_path=storage_path)
     
     def initialize(self) -> bool:
         """Initialize backtest engine."""
         self.logger.info(f"Initializing backtest engine with capital: {self.initial_capital}")
+        self.simulator.initialize()
+        self.storage.initialize()
         return True
     
-    def run_backtest(self, strategy, data: pd.DataFrame) -> Dict[str, Any]:
-        """Run backtest for given strategy and data."""
+   
+    def run_backtest(self, symbol: str, signals: pd.Series, price_series: pd.Series,
+                   save_csv: bool = False, strategy_name: Optional[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Execute trades based on precomputed signals. 
+        Returns (trades_df, values_df).
+        
+        Example:
+            >>> engine = BacktestEngine(initial_capital=100000)
+            >>> trades_df, values_df = engine.run_signals(
+            ...     symbol='AAPL',
+            ...     signals=signals,  # Series with 1/-1/0
+            ...     price_series=data['Close']
+            ... )
+        """
         try:
-            self.logger.info("Starting backtest")
+            # Normalize input to DataFrame with required columns
+            df_sig = pd.DataFrame({
+                'Signal': signals,
+                'Close': price_series
+            })
             
-            # Initialize portfolio
-            cash = self.initial_capital
-            positions = {}
-            trades = []
+            values_records: List[Dict[str, Any]] = []
             
-            # Run strategy on data
-            for i, (date, row) in enumerate(data.iterrows()):
-                # Get signals from strategy
-                signals = strategy.generate_signals(data.iloc[:i+1])
+            for i, (date, row) in enumerate(df_sig.iterrows()):
+                signal = row['Signal']
+                price = row['Close']
                 
-                if not signals.empty and i > 0:
-                    signal = signals.iloc[-1]
-                    
-                    # Execute trades based on signals
-                    if signal != 0:  # Buy or sell signal
-                        symbol = 'STOCK'  # Simplified for single asset
-                        price = row['close']
-                        quantity = int(signal * cash * 0.1 / price)  # Use 10% of cash
-                        
-                        if quantity > 0 and quantity * price <= cash:
-                            # Buy
-                            cost = quantity * price * (1 + self.commission)
-                            cash -= cost
-                            positions[symbol] = positions.get(symbol, 0) + quantity
-                            trades.append({
-                                'date': date,
-                                'symbol': symbol,
-                                'quantity': quantity,
-                                'price': price,
-                                'type': 'buy'
-                            })
-                        elif quantity < 0 and positions.get(symbol, 0) >= abs(quantity):
-                            # Sell
-                            quantity = abs(quantity)
-                            proceeds = quantity * price * (1 - self.commission)
-                            cash += proceeds
-                            positions[symbol] -= quantity
-                            trades.append({
-                                'date': date,
-                                'symbol': symbol,
-                                'quantity': -quantity,
-                                'price': price,
-                                'type': 'sell'
-                            })
+                # Execute trades: full-in/full-out strategy
+                if signal == 1:
+                    # Buy: use all available cash
+                    max_qty = int(self.simulator.cash / (price * (1 + self.commission)))
+                    if max_qty > 0:
+                        self.simulator.execute_trade(symbol=symbol, quantity=max_qty, 
+                                                     price=price, timestamp=date)
+                elif signal == -1:
+                    # Sell: sell entire position
+                    current_qty = self.simulator.position_manager.get_position(symbol)
+                    if current_qty > 0:
+                        self.simulator.execute_trade(symbol=symbol, quantity=-current_qty, 
+                                                     price=price, timestamp=date)
+                
+                # Calculate daily portfolio metrics
+                position_qty = self.simulator.position_manager.get_position(symbol)
+                position_value = position_qty * price
+                total_value = position_value + self.simulator.cash
+                
+                daily_pnl = 0.0 if i == 0 else total_value - values_records[-1]['total_value']
+                
+                values_records.append({
+                    'date': date,
+                    'signal': signal,
+                    'price': price,
+                    'cash': self.simulator.cash,
+                    'position': position_qty,
+                    'position_value': position_value,
+                    'total_value': total_value,
+                    'daily_pnl': daily_pnl,
+                })
             
-            # Calculate final portfolio value
-            final_price = data['close'].iloc[-1]
-            final_value = cash + sum(positions.values()) * final_price
+            trades_df = pd.DataFrame(self.simulator.trades)
+            values_df = pd.DataFrame(values_records)
             
-            self.results = {
-                'initial_capital': self.initial_capital,
-                'final_value': final_value,
-                'total_return': (final_value - self.initial_capital) / self.initial_capital,
-                'trades': trades,
-                'final_positions': positions,
-                'final_cash': cash
-            }
+            if save_csv:
+                self._save_backtest_results(symbol, trades_df, values_df, strategy_name)
             
-            self.logger.info(f"Backtest completed. Total return: {self.results['total_return']:.2%}")
-            return self.results
+            return trades_df, values_df
             
         except Exception as e:
-            raise BacktestError(f"Backtest failed: {str(e)}")
+            self.logger.error(f"run_signals error: {e}")
+            return pd.DataFrame(), pd.DataFrame()
     
-    def get_results(self) -> Optional[Dict[str, Any]]:
-        """Get backtest results."""
-        return self.results
-
+    def _save_backtest_results(self, symbol: str, trades_df: pd.DataFrame, 
+                              values_df: pd.DataFrame, strategy_name: Optional[str] = None) -> None:
+        """Save backtest results using DataStorage."""
+        paths = self.storage.save_backtest_results(
+            trades_df=trades_df,
+            values_df=values_df,
+            symbol=symbol,
+            strategy_name=strategy_name
+        )
+        self.logger.info(f"Saved backtest results: {paths}")

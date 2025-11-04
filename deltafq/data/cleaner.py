@@ -15,26 +15,25 @@ class DataCleaner(BaseComponent):
         self.logger.info("Initializing data cleaner")
         return True
     
-    def clean_price_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Clean price data by removing invalid values."""
-        # Remove rows with NaN values
+    def dropna(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Remove rows with NaN values."""
         cleaned_data = data.dropna()
-        
-        # Remove rows with zero or negative prices
-        price_columns = ['open', 'high', 'low', 'close']
-        for col in price_columns:
-            if col in cleaned_data.columns:
-                cleaned_data = cleaned_data[cleaned_data[col] > 0]
-        
-        self.logger.info(f"Cleaned data: {len(data)} -> {len(cleaned_data)} rows")
+        self.logger.info(f"Dropped NaN rows: {len(data)} -> {len(cleaned_data)} rows")
         return cleaned_data
     
-    def fill_missing_data(self, data: pd.DataFrame, method: str = "forward") -> pd.DataFrame:
+    def fillna(self, data: pd.DataFrame, method: str = "forward") -> pd.DataFrame:
         """Fill missing data using specified method."""
+        na_count_before = data.isna().sum().sum()
+        
         if method == "forward":
-            return data.fillna(method='ffill')
+            filled_data = data.fillna(method='ffill')
         elif method == "backward":
-            return data.fillna(method='bfill')
+            filled_data = data.fillna(method='bfill')
         else:
-            return data.fillna(0)
+            filled_data = data.fillna(0)
+        
+        na_count_after = filled_data.isna().sum().sum()
+        self.logger.info(f"Filled NaN: {na_count_before} -> {na_count_after} (method: {method})")
+        
+        return filled_data
 

@@ -20,11 +20,11 @@ class Config:
         """Load default configuration."""
         return {
             "data": {
-                "cache_dir": "./data_cache",
+                "cache_dir": "data_cache",
                 "default_source": "yahoo"
             },
             "trading": {
-                "initial_capital": 100000,
+                "initial_capital": 1000000,
                 "commission": 0.001,
                 "slippage": 0.0005
             },

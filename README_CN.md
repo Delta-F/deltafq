@@ -26,12 +26,12 @@ import deltafq as dfq
 # 获取市场数据
 fetcher = dfq.data.DataFetcher()
 fetcher.initialize()
-data = fetcher.fetch_stock_data('AAPL', '2023-01-01', '2023-12-31')
+data = fetcher.fetch_data('AAPL', '2023-01-01', '2023-12-31', clean=True)
 
-# 清洗和验证数据
+# 清洗数据（移除NaN行）
 cleaner = dfq.data.DataCleaner()
 cleaner.initialize()
-cleaned_data = cleaner.clean_price_data(data)
+cleaned_data = cleaner.dropna(data)
 
 validator = dfq.data.DataValidator()
 validator.initialize()
@@ -74,7 +74,7 @@ portfolio_summary = simulator.run_strategy(strategy, cleaned_data)
 
 ## 贡献
 
-请阅读我们的[贡献指南](CONTRIBUTING.md)了解行为准则和提交拉取请求的流程。
+欢迎贡献！欢迎提交 Pull Request。
 
 ## 许可证
 

@@ -96,13 +96,13 @@ class TestDeltaFQCore(unittest.TestCase):
         fetcher.initialize()
         
         # Test data fetching
-        data = fetcher.fetch_stock_data('AAPL', '2023-01-01', '2023-01-31')
+        data = fetcher.fetch_data('AAPL', '2023-01-01', '2023-01-31')
         self.assertIsInstance(data, pd.DataFrame)
-        self.assertIn('close', data.columns)
-        self.assertIn('volume', data.columns)
+        self.assertIn('Close', data.columns)
+        self.assertIn('Volume', data.columns)
         
         # Test multiple symbols
-        data_dict = fetcher.fetch_multiple_symbols(['AAPL', 'GOOGL'], '2023-01-01', '2023-01-31')
+        data_dict = fetcher.fetch_data_multiple(['AAPL', 'GOOGL'], '2023-01-01', '2023-01-31')
         self.assertEqual(len(data_dict), 2)
         self.assertIn('AAPL', data_dict)
         self.assertIn('GOOGL', data_dict)

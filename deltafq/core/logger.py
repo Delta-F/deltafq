@@ -4,8 +4,6 @@ Logging system for DeltaFQ.
 
 import logging
 import sys
-from typing import Optional
-
 
 class Logger:
     """Logger for DeltaFQ components."""
@@ -18,7 +16,8 @@ class Logger:
         if not self.logger.handlers:
             handler = logging.StreamHandler(sys.stdout)
             formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                '[%(asctime)s] %(name)-20s >>> %(levelname)-8s >>> %(message)s',
+                datefmt='%H:%M:%S'
             )
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)

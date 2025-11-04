@@ -4,7 +4,7 @@ Price comparison charts for DeltaFQ.
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import List, Optional, Dict, Union
+from typing import Optional, Dict, Union
 from ..core.base import BaseComponent
 
 
@@ -18,11 +18,12 @@ class PriceChart(BaseComponent):
         plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.available else 'default')
         return True
     
-    def plot_price(
+    def plot_prices(
         self, 
         data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], 
         price_column: str = 'Close',
-        symbols: Optional[List[str]] = None,
+        normalize: bool = False,
+        base_value: float = 100.0,
         title: Optional[str] = None,
         figsize: tuple = (12, 6),
         show: bool = True,
@@ -32,9 +33,11 @@ class PriceChart(BaseComponent):
         Plot price comparison chart.
         
         Args:
-            data: DataFrame with price data or dict of DataFrames for multiple symbols
+            data: DataFrame with price data or dict of DataFrames for multiple symbols.
+                 If dict, symbols will be extracted from dict keys automatically.
             price_column: Column name for price (default: 'Close')
-            symbols: List of symbol names (required if data is dict)
+            normalize: Whether to normalize prices to start at base_value (default: False)
+            base_value: Base value for normalization (default: 100.0, only used when normalize=True)
             title: Chart title
             figsize: Figure size tuple (width, height)
             show: Whether to display the chart
@@ -44,7 +47,8 @@ class PriceChart(BaseComponent):
             matplotlib Figure object
         """
         try:
-            self.logger.info("Generating price comparison chart")
+            chart_type = "normalized price comparison" if normalize else "price comparison"
+            self.logger.info(f"Generating {chart_type} chart")
             
             fig, ax = plt.subplots(figsize=figsize)
             
@@ -54,36 +58,57 @@ class PriceChart(BaseComponent):
                     raise ValueError(f"Column '{price_column}' not found in data")
                 
                 price_data = data[price_column]
-                ax.plot(price_data.index, price_data.values, label='Price', linewidth=1.5)
+                
+                if normalize:
+                    price_data = (price_data / price_data.iloc[0]) * base_value
+                    label = 'Normalized Price'
+                    ylabel = f'Normalized Price (Base={base_value})'
+                else:
+                    label = 'Price'
+                    ylabel = 'Price'
+                
+                ax.plot(price_data.index, price_data.values, label=label, linewidth=1.5)
                 
                 if not title:
-                    title = f"Price Chart - {price_column.title()}"
+                    if normalize:
+                        title = f"Normalized Price Chart - {price_column.title()}"
+                    else:
+                        title = f"Price Chart - {price_column.title()}"
             
-            # Handle multiple DataFrames
+            # Handle multiple DataFrames (dict)
             elif isinstance(data, dict):
-                if not symbols:
-                    symbols = list(data.keys())
+                symbols = list(data.keys())
                 
-                if len(symbols) != len(data):
-                    raise ValueError("Number of symbols must match number of data frames")
+                # Set ylabel based on normalize flag
+                if normalize:
+                    ylabel = f'Normalized Price (Base={base_value})'
+                else:
+                    ylabel = 'Price'
                 
-                for i, symbol in enumerate(symbols):
+                for symbol in symbols:
                     df = data[symbol]
                     if price_column not in df.columns:
                         self.logger.warning(f"Column '{price_column}' not found for {symbol}, skipping")
                         continue
                     
                     price_data = df[price_column]
+                    
+                    if normalize:
+                        price_data = (price_data / price_data.iloc[0]) * base_value
+                    
                     ax.plot(price_data.index, price_data.values, label=symbol, linewidth=1.5)
                 
                 if not title:
-                    title = "Price Comparison Chart"
+                    if normalize:
+                        title = "Normalized Price Comparison Chart"
+                    else:
+                        title = "Price Comparison Chart"
             
             else:
                 raise ValueError("Data must be a pandas DataFrame or dict of DataFrames")
             
             ax.set_xlabel('Date', fontsize=10)
-            ax.set_ylabel('Price', fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10)
             ax.set_title(title, fontsize=12, fontweight='bold')
             ax.legend(loc='best')
             ax.grid(True, alpha=0.3)
@@ -101,95 +126,6 @@ class PriceChart(BaseComponent):
             
         except Exception as e:
             self.logger.info(f"Error generating price chart: {str(e)}")
-            raise
-    
-    def plot_normalized_price(
-        self,
-        data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
-        price_column: str = 'Close',
-        symbols: Optional[List[str]] = None,
-        base_value: float = 100.0,
-        title: Optional[str] = None,
-        figsize: tuple = (12, 6),
-        show: bool = True,
-        save_path: Optional[str] = None
-    ) -> plt.Figure:
-        """
-        Plot normalized price comparison chart (all prices start at base_value).
-        
-        Args:
-            data: DataFrame with price data or dict of DataFrames for multiple symbols
-            price_column: Column name for price (default: 'Close')
-            symbols: List of symbol names (required if data is dict)
-            base_value: Base value for normalization (default: 100.0)
-            title: Chart title
-            figsize: Figure size tuple
-            show: Whether to display the chart
-            save_path: Optional path to save the chart
-            
-        Returns:
-            matplotlib Figure object
-        """
-        try:
-            self.logger.info("Generating normalized price comparison chart")
-            
-            fig, ax = plt.subplots(figsize=figsize)
-            
-            # Handle single DataFrame
-            if isinstance(data, pd.DataFrame):
-                if price_column not in data.columns:
-                    raise ValueError(f"Column '{price_column}' not found in data")
-                
-                price_data = data[price_column]
-                normalized = (price_data / price_data.iloc[0]) * base_value
-                ax.plot(normalized.index, normalized.values, label='Normalized Price', linewidth=1.5)
-                
-                if not title:
-                    title = f"Normalized Price Chart - {price_column.title()}"
-            
-            # Handle multiple DataFrames
-            elif isinstance(data, dict):
-                if not symbols:
-                    symbols = list(data.keys())
-                
-                if len(symbols) != len(data):
-                    raise ValueError("Number of symbols must match number of data frames")
-                
-                for i, symbol in enumerate(symbols):
-                    df = data[symbol]
-                    if price_column not in df.columns:
-                        self.logger.warning(f"Column '{price_column}' not found for {symbol}, skipping")
-                        continue
-                    
-                    price_data = df[price_column]
-                    normalized = (price_data / price_data.iloc[0]) * base_value
-                    ax.plot(normalized.index, normalized.values, label=symbol, linewidth=1.5)
-                
-                if not title:
-                    title = "Normalized Price Comparison Chart"
-            
-            else:
-                raise ValueError("Data must be a pandas DataFrame or dict of DataFrames")
-            
-            ax.set_xlabel('Date', fontsize=10)
-            ax.set_ylabel(f'Normalized Price (Base={base_value})', fontsize=10)
-            ax.set_title(title, fontsize=12, fontweight='bold')
-            ax.legend(loc='best')
-            ax.grid(True, alpha=0.3)
-            plt.xticks(rotation=45)
-            plt.tight_layout()
-            
-            if save_path:
-                plt.savefig(save_path, dpi=300, bbox_inches='tight')
-                self.logger.info(f"Chart saved to {save_path}")
-            
-            if show:
-                plt.show()
-            
-            return fig
-            
-        except Exception as e:
-            self.logger.info(f"Error generating normalized price chart: {str(e)}")
             raise
     
     def plot_signals(

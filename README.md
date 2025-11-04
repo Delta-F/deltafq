@@ -26,12 +26,12 @@ import deltafq as dfq
 # Fetch market data
 fetcher = dfq.data.DataFetcher()
 fetcher.initialize()
-data = fetcher.fetch_stock_data('AAPL', '2023-01-01', '2023-12-31')
+data = fetcher.fetch_data('AAPL', '2023-01-01', '2023-12-31', clean=True)
 
-# Clean and validate data
+# Clean data (remove NaN rows)
 cleaner = dfq.data.DataCleaner()
 cleaner.initialize()
-cleaned_data = cleaner.clean_price_data(data)
+cleaned_data = cleaner.dropna(data)
 
 validator = dfq.data.DataValidator()
 validator.initialize()
@@ -74,7 +74,7 @@ portfolio_summary = simulator.run_strategy(strategy, cleaned_data)
 
 ## Contributing
 
-Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
