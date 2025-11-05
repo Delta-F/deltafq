@@ -12,6 +12,9 @@ plotly>=5.0.0
 yfinance>=0.1.70
 requests>=2.25.0
 
+# Technical indicators
+TA-Lib>=0.4.24
+
 # Development and testing
 pytest>=6.2.0
 pytest-cov>=2.12.0

@@ -3,14 +3,16 @@ Technical indicators module for DeltaFQ.
 """
 
 from .technical import TechnicalIndicators
-from .momentum import MomentumIndicators
-from .trend import TrendIndicators
-from .volatility import VolatilityIndicators
+from .talib_indicators import TalibIndicators
+from .fundamental import FundamentalIndicators
+from .macro import MacroIndicators
+from .sentiment import SentimentIndicators
 
 __all__ = [
     "TechnicalIndicators",
-    "MomentumIndicators",
-    "TrendIndicators",
-    "VolatilityIndicators"
+    "TalibIndicators",
+    "FundamentalIndicators",
+    "MacroIndicators",
+    "SentimentIndicators"
 ]
 
