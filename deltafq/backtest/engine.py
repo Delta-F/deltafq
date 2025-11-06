@@ -4,13 +4,18 @@ Backtesting engine for DeltaFQ.
 
 import pandas as pd
 from typing import Dict, Any, Optional, Tuple, List
+from datetime import datetime
 from ..core.base import BaseComponent
-from ..trading.simulator import PaperTradingSimulator
+from ..trader.execution import ExecutionEngine
 from ..data.storage import DataStorage
 
 
 class BacktestEngine(BaseComponent):
-    """Backtesting engine for strategy testing."""
+    """Backtesting engine for strategy testing with historical data.
+    
+    Uses ExecutionEngine for order execution and portfolio management.
+    Only handles signal processing and order parameter definition.
+    """
     
     def __init__(self, initial_capital: float = 1000000, commission: float = 0.001, 
                  slippage: Optional[float] = None, storage: Optional[DataStorage] = None,
@@ -20,39 +25,49 @@ class BacktestEngine(BaseComponent):
         self.initial_capital = initial_capital
         self.commission = commission
         self.slippage = slippage
-        self.results = None
-        # Use PaperTradingSimulator for trade execution
-        self.simulator = PaperTradingSimulator(
+        
+        # Create execution engine for paper trading (broker=None)
+        self.execution = ExecutionEngine(
+            broker=None,
             initial_capital=initial_capital,
             commission=commission,
-            slippage=slippage
+            **kwargs
         )
+        
         # Data storage
         self.storage = storage or DataStorage(base_path=storage_path)
     
     def initialize(self) -> bool:
         """Initialize backtest engine."""
-        self.logger.info(f"Initializing backtest engine with capital: {self.initial_capital}")
-        self.simulator.initialize()
-        self.storage.initialize()
-        return True
+        self.logger.info(f"Initializing backtest engine with capital: {self.initial_capital}, "
+                        f"commission: {self.commission}")
+        return self.execution.initialize()
     
-   
     def run_backtest(self, symbol: str, signals: pd.Series, price_series: pd.Series,
                    save_csv: bool = False, strategy_name: Optional[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Execute trades based on precomputed signals. 
-        Returns (trades_df, values_df).
+        Execute trades based on precomputed signals.
+        
+        Only handles signal processing and order parameter definition.
+        All buy/sell calculations are delegated to ExecutionEngine.
         
         Example:
             >>> engine = BacktestEngine(initial_capital=100000)
-            >>> trades_df, values_df = engine.run_signals(
+            >>> trades_df, values_df = engine.run_backtest(
             ...     symbol='AAPL',
             ...     signals=signals,  # Series with 1/-1/0
             ...     price_series=data['Close']
             ... )
         """
         try:
+            # Reset execution engine for new backtest
+            self.execution = ExecutionEngine(
+                broker=None,
+                initial_capital=self.initial_capital,
+                commission=self.commission
+            )
+            self.execution.initialize()
+            
             # Normalize input to DataFrame with required columns
             df_sig = pd.DataFrame({
                 'Signal': signals,
@@ -65,24 +80,36 @@ class BacktestEngine(BaseComponent):
                 signal = row['Signal']
                 price = row['Close']
                 
-                # Execute trades: full-in/full-out strategy
-                if signal == 1:
-                    # Buy: use all available cash
-                    max_qty = int(self.simulator.cash / (price * (1 + self.commission)))
+                # Process signals and define order parameters
+                if signal == 1:  # Buy signal
+                    # Calculate maximum quantity based on available cash
+                    # Note: ExecutionEngine will handle cash validation
+                    max_qty = int(self.execution.cash / (price * (1 + self.commission)))
                     if max_qty > 0:
-                        self.simulator.execute_trade(symbol=symbol, quantity=max_qty, 
-                                                     price=price, timestamp=date)
-                elif signal == -1:
-                    # Sell: sell entire position
-                    current_qty = self.simulator.position_manager.get_position(symbol)
+                        # Execute order through ExecutionEngine
+                        self.execution.execute_order(
+                            symbol=symbol,
+                            quantity=max_qty,
+                            order_type="market",
+                            price=price
+                        )
+                        
+                elif signal == -1:  # Sell signal
+                    # Get current position
+                    current_qty = self.execution.position_manager.get_position(symbol)
                     if current_qty > 0:
-                        self.simulator.execute_trade(symbol=symbol, quantity=-current_qty, 
-                                                     price=price, timestamp=date)
+                        # Execute order through ExecutionEngine
+                        self.execution.execute_order(
+                            symbol=symbol,
+                            quantity=-current_qty,  # Negative for sell
+                            order_type="market",
+                            price=price
+                        )
                 
-                # Calculate daily portfolio metrics
-                position_qty = self.simulator.position_manager.get_position(symbol)
+                # Calculate daily portfolio metrics from ExecutionEngine
+                position_qty = self.execution.position_manager.get_position(symbol)
                 position_value = position_qty * price
-                total_value = position_value + self.simulator.cash
+                total_value = position_value + self.execution.cash
                 
                 daily_pnl = 0.0 if i == 0 else total_value - values_records[-1]['total_value']
                 
@@ -90,14 +117,15 @@ class BacktestEngine(BaseComponent):
                     'date': date,
                     'signal': signal,
                     'price': price,
-                    'cash': self.simulator.cash,
+                    'cash': self.execution.cash,
                     'position': position_qty,
                     'position_value': position_value,
                     'total_value': total_value,
                     'daily_pnl': daily_pnl,
                 })
             
-            trades_df = pd.DataFrame(self.simulator.trades)
+            # Get trades from ExecutionEngine
+            trades_df = pd.DataFrame(self.execution.trades)
             values_df = pd.DataFrame(values_records)
             
             if save_csv:
@@ -106,7 +134,7 @@ class BacktestEngine(BaseComponent):
             return trades_df, values_df
             
         except Exception as e:
-            self.logger.error(f"run_signals error: {e}")
+            self.logger.error(f"run_backtest error: {e}")
             return pd.DataFrame(), pd.DataFrame()
     
     def _save_backtest_results(self, symbol: str, trades_df: pd.DataFrame, 

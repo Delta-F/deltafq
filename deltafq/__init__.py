@@ -14,7 +14,7 @@ from . import data
 from . import strategy
 from . import backtest
 from . import indicators
-from . import trading
+from . import trader
 from . import live
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "strategy",
     "backtest",
     "indicators",
-    "trading",
+    "trader",
     "live"
 ]
 

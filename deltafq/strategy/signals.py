@@ -34,8 +34,8 @@ class SignalGenerator(BaseComponent):
         bands: pd.DataFrame,
         method: str = 'cross',
     ) -> pd.Series:
-        """Boll-based signals from precomputed bands: 'touch_and_breakout'|'cross'."""
-        if method not in ['touch_and_breakout', 'cross']:
+        """Boll-based signals from precomputed bands: 'touch'|'cross'|'cross_current'."""
+        if method not in ['touch', 'cross', 'cross_current']:
             raise ValueError("Invalid method")
         required_cols = {'upper', 'middle', 'lower'}
         missing = required_cols - set(bands.columns)
@@ -45,17 +45,22 @@ class SignalGenerator(BaseComponent):
             bands = bands.reindex(price.index)
         signals = pd.Series(0, index=price.index, dtype=int)
         
-        if method == 'touch_and_breakout':
+        if method == 'touch':
             buy_condition = price <= bands['lower']
             sell_condition = price >= bands['upper']
             signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
         
         elif method == 'cross':
-            # Boundary cross confirmation: compare prev price vs prev bands, current vs current bands
             prev_price = price.shift(1)
             prev_bands = bands.shift(1)
             buy_condition = (prev_price <= prev_bands['lower']) & (price >= bands['lower'])
             sell_condition = (prev_price >= prev_bands['upper']) & (price <= bands['upper'])
+            signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
+
+        elif method == 'cross_current':
+            prev_price = price.shift(1)
+            buy_condition = (prev_price <= bands['lower']) & (price >= bands['lower'])
+            sell_condition = (prev_price >= bands['upper']) & (price <= bands['upper'])
             signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
         
         self.logger.info(f"Generated Boll signals: method={method}")

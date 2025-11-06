@@ -1,81 +1,63 @@
 # DeltaFQ
 
-A comprehensive Python quantitative finance library for strategy development, backtesting, and live trading.
+Modern Python library for strategy research, backtesting, paper/live trading, and beautiful reporting.
 
-## Features
+## Highlights
 
-- **Data Management**: Efficient data fetching, cleaning, and storage
-- **Strategy Framework**: Flexible strategy development framework
-- **Backtesting**: High-performance historical data backtesting
-- **Paper Trading**: Risk-free strategy testing with simulated trading
-- **Live Trading**: Real-time trading with broker integration
-- **Technical Indicators**: Rich library of technical analysis indicators
-- **Risk Management**: Built-in risk control modules
+- **Clean architecture**: `data` → `strategy` (signals) → `backtest` (execution) → `performance` (metrics) → `reporter` (text + charts)
+- **Execution engine**: Unified order execution for paper/live trading via a `Broker` abstraction
+- **Indicators**: Rich `TechnicalIndicators` (SMA/EMA/RSI/KDJ/BOLL/ATR/…)
+- **Signals**: Simple, composable `SignalGenerator` (e.g., Bollinger `touch`/`cross`/`cross_current`)
+- **Charts**: Matplotlib by default, optional Plotly interactive performance charts
+- **Reports**: Console-friendly summary with i18n (Chinese/English) + visual charts
 
-## Installation
+## Install
 
 ```bash
 pip install deltafq
 ```
 
-## Quick Start
+## 60-second Quick Start (Bollinger strategy)
 
 ```python
 import deltafq as dfq
 
-# Fetch market data
-fetcher = dfq.data.DataFetcher()
-fetcher.initialize()
-data = fetcher.fetch_data('AAPL', '2023-01-01', '2023-12-31', clean=True)
-
-# Clean data (remove NaN rows)
-cleaner = dfq.data.DataCleaner()
-cleaner.initialize()
-cleaned_data = cleaner.dropna(data)
-
-validator = dfq.data.DataValidator()
-validator.initialize()
-validator.validate_price_data(cleaned_data)
-
-# Create and test a strategy
-class SimpleMAStrategy(dfq.strategy.BaseStrategy):
-    def __init__(self, fast_period=10, slow_period=20):
-        super().__init__()
-        self.fast_period = fast_period
-        self.slow_period = slow_period
-    
-    def generate_signals(self, data):
-        fast_ma = data['close'].rolling(window=self.fast_period).mean()
-        slow_ma = data['close'].rolling(window=self.slow_period).mean()
-        import numpy as np
-        signals = np.where(fast_ma > slow_ma, 1, np.where(fast_ma < slow_ma, -1, 0))
-        return pd.Series(signals, index=data.index)
-
-strategy = SimpleMAStrategy()
-strategy.initialize()
-results = strategy.run(cleaned_data)
-
-# Run backtest
+symbol = 'AAPL'
+fetcher = dfq.data.DataFetcher(); indicators = dfq.indicators.TechnicalIndicators()
+generator = dfq.strategy.SignalGenerator()
 engine = dfq.backtest.BacktestEngine(initial_capital=100000)
-engine.initialize()
-backtest_results = engine.run_backtest(strategy, cleaned_data)
+perf = dfq.backtest.PerformanceAnalyzer(); reporter = dfq.backtest.BacktestReporter()
 
-# Run paper trading
-simulator = dfq.trading.PaperTradingSimulator(initial_capital=100000)
-simulator.initialize()
-portfolio_summary = simulator.run_strategy(strategy, cleaned_data)
+data = fetcher.fetch_data(symbol, '2023-01-01', '2023-12-31', clean=True)
+bands = indicators.boll(data['Close'], period=20, std_dev=2)
+signals = generator.boll_signals(price=data['Close'], bands=bands, method='cross_current')
+
+trades_df, values_df = engine.run_backtest(symbol, signals, data['Close'], strategy_name='BOLL')
+values_df, metrics = perf.get_performance_metrics(symbol, trades_df, values_df, engine.initial_capital)
+
+# Text + charts; pass use_plotly=True inside reporter if you want interactive charts
+reporter.generate_visual_report(metrics=metrics, values_df=values_df, title=f'{symbol} BOLL Strategy')
 ```
 
-## Documentation
+## What’s inside
 
-- [API Reference](docs/api_reference/)
-- [Tutorials](docs/tutorials/)
-- [Examples](examples/)
+- `deltafq/data`: fetching, cleaning, validation
+- `deltafq/indicators`: classic TA indicators
+- `deltafq/strategy`: signal generation + signal combination
+- `deltafq/backtest`: execution via `ExecutionEngine`; performance via `PerformanceAnalyzer`; reporting via `BacktestReporter`
+- `deltafq/charts`: signal and performance charts (Matplotlib + optional Plotly)
+
+## Examples
+
+See the `examples/` folder for ready-to-run scripts:
+
+- Compare indicators and signals
+- Run a Bollinger strategy and generate a full report
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please open an issue or submit a PR.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License – see [LICENSE](LICENSE).

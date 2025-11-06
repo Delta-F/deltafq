@@ -1,16 +1,15 @@
 # DeltaFQ
 
-一个全面的Python量化金融库，用于策略开发、回测和实盘交易。
+现代化的 Python 量化库：策略研究、回测、模拟/实盘交易与精美报告。
 
-## 功能特性
+## 特性亮点
 
-- **数据管理**: 高效的数据获取、清洗和存储
-- **策略框架**: 灵活的策略开发框架
-- **回测系统**: 高性能的历史数据回测
-- **模拟交易**: 无风险的策略测试模拟交易
-- **实盘交易**: 实时交易与券商集成
-- **技术指标**: 丰富的技术分析指标库
-- **风险管理**: 内置风险控制模块
+- **清晰架构**：`data` → `strategy`（信号）→ `backtest`（执行）→ `performance`（指标）→ `reporter`（文本+图表）
+- **执行引擎**：统一下单执行；`Broker` 抽象兼容纸面与实盘
+- **技术指标**：`TechnicalIndicators`（SMA/EMA/RSI/KDJ/BOLL/ATR/...）
+- **信号模块**：`SignalGenerator`（如 BOLL 的 `touch`/`cross`/`cross_current`）
+- **可视化**：默认 Matplotlib；支持 Plotly 生成交互式业绩图
+- **报告**：控制台友好报告（中/英）+ 可视化图表
 
 ## 安装
 
@@ -18,65 +17,45 @@
 pip install deltafq
 ```
 
-## 快速开始
+## 60 秒快速上手（BOLL 策略）
 
 ```python
 import deltafq as dfq
 
-# 获取市场数据
-fetcher = dfq.data.DataFetcher()
-fetcher.initialize()
-data = fetcher.fetch_data('AAPL', '2023-01-01', '2023-12-31', clean=True)
-
-# 清洗数据（移除NaN行）
-cleaner = dfq.data.DataCleaner()
-cleaner.initialize()
-cleaned_data = cleaner.dropna(data)
-
-validator = dfq.data.DataValidator()
-validator.initialize()
-validator.validate_price_data(cleaned_data)
-
-# 创建并测试策略
-class SimpleMAStrategy(dfq.strategy.BaseStrategy):
-    def __init__(self, fast_period=10, slow_period=20):
-        super().__init__()
-        self.fast_period = fast_period
-        self.slow_period = slow_period
-    
-    def generate_signals(self, data):
-        fast_ma = data['close'].rolling(window=self.fast_period).mean()
-        slow_ma = data['close'].rolling(window=self.slow_period).mean()
-        import numpy as np
-        signals = np.where(fast_ma > slow_ma, 1, np.where(fast_ma < slow_ma, -1, 0))
-        return pd.Series(signals, index=data.index)
-
-strategy = SimpleMAStrategy()
-strategy.initialize()
-results = strategy.run(cleaned_data)
-
-# 运行回测
+symbol = 'AAPL'
+fetcher = dfq.data.DataFetcher(); indicators = dfq.indicators.TechnicalIndicators()
+generator = dfq.strategy.SignalGenerator()
 engine = dfq.backtest.BacktestEngine(initial_capital=100000)
-engine.initialize()
-backtest_results = engine.run_backtest(strategy, cleaned_data)
+perf = dfq.backtest.PerformanceAnalyzer(); reporter = dfq.backtest.BacktestReporter()
 
-# 运行模拟交易
-simulator = dfq.trading.PaperTradingSimulator(initial_capital=100000)
-simulator.initialize()
-portfolio_summary = simulator.run_strategy(strategy, cleaned_data)
+data = fetcher.fetch_data(symbol, '2023-01-01', '2023-12-31', clean=True)
+bands = indicators.boll(data['Close'], period=20, std_dev=2)
+signals = generator.boll_signals(price=data['Close'], bands=bands, method='cross_current')
+
+trades_df, values_df = engine.run_backtest(symbol, signals, data['Close'], strategy_name='BOLL')
+values_df, metrics = perf.get_performance_metrics(symbol, trades_df, values_df, engine.initial_capital)
+
+reporter.generate_visual_report(metrics=metrics, values_df=values_df, title=f'{symbol} BOLL 策略', language='zh')
 ```
 
-## 文档
+## 目录说明
 
-- [API参考](docs/api_reference/)
-- [教程](docs/tutorials/)
-- [示例](examples/)
+- `deltafq/data`：数据获取、清洗与校验
+- `deltafq/indicators`：经典技术指标
+- `deltafq/strategy`：信号生成与组合
+- `deltafq/backtest`：执行引擎、业绩分析与报告
+- `deltafq/charts`：信号与业绩图表（Matplotlib + Plotly 可选）
+
+## 示例
+
+示例位于 `examples/`：
+- 指标/信号对比
+- BOLL 策略回测与完整报告
 
 ## 贡献
 
-欢迎贡献！欢迎提交 Pull Request。
+欢迎参与完善！提交 Issue 或 Pull Request 即可。
 
 ## 许可证
 
-本项目采用MIT许可证 - 查看[LICENSE](LICENSE)文件了解详情。
-
+MIT 许可协议，见 [LICENSE](LICENSE)。

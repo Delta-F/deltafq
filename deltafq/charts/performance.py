@@ -82,17 +82,20 @@ class PerformanceChart(BaseComponent):
         self,
         values_df: pd.DataFrame,
         benchmark_close: Optional[pd.Series] = None,
+        strategy_close: Optional[pd.Series] = None,
         title: Optional[str] = None,
         figsize: tuple = (16, 12),
         show: bool = True,
         save_path: Optional[str] = None,
+        use_plotly: bool = True,
     ) -> plt.Figure:
         """
-        Visualize strategy performance with four stacked plots:
+        Visualize strategy performance with up to five stacked plots:
         1) Equity curve (normalized) with optional benchmark
-        2) Drawdown (%), filled area
-        3) Daily returns (%) bar chart
-        4) Returns distribution (histogram)
+        2) Close price comparison (strategy vs benchmark) — shown when strategy_close & benchmark_close provided
+        3) Drawdown (%), filled area
+        4) Daily returns (%) bar chart
+        5) Returns distribution (histogram)
 
         Expects values_df to include columns: 'total_value', optional 'returns', optional 'drawdown'.
         Index should be datetime; if a 'date' column exists, it will be used as index.
@@ -126,7 +129,113 @@ class PerformanceChart(BaseComponent):
             color_dd_fill = '#F8A5A5'  # drawdown fill
             color_dd_line = '#D63031'  # drawdown line
 
-            fig, axes = plt.subplots(4, 1, figsize=figsize)
+            # Try Plotly if requested
+            if use_plotly:
+                try:
+                    from plotly.subplots import make_subplots
+                    import plotly.graph_objects as go
+
+                    # Prepare normalized series
+                    strategy_nv = df['total_value'] / float(df['total_value'].iloc[0])
+                    bench_nv = None
+                    if benchmark_close is not None and not benchmark_close.empty:
+                        b = pd.Series(benchmark_close).dropna()
+                        b.index = pd.to_datetime(b.index)
+                        b_ret = b.pct_change().fillna(0.0)
+                        bench_nv = (1.0 + b_ret).cumprod()
+                        bench_nv = bench_nv / float(bench_nv.iloc[0])
+
+                    returns_pct = (df['returns'] * 100.0).fillna(0.0)
+                    dd_pct = (df['drawdown'] * 100.0).fillna(0.0)
+
+                    # Determine rows: add one if we can plot close comparison
+                    can_close = (strategy_close is not None) and (benchmark_close is not None)
+                    rows = 5 if can_close else 4
+
+                    fig_p = make_subplots(
+                        rows=rows, cols=1, shared_xaxes=True,
+                        vertical_spacing=0.06,
+                        subplot_titles=(
+                            'Equity (normalized)',
+                            'Close Price',
+                            'Drawdown',
+                            'Daily Return',
+                            'Return Distribution (trading days)'
+                        )
+                    )
+
+                    # Row 1: Equity
+                    fig_p.add_trace(
+                        go.Scatter(x=df.index, y=strategy_nv.values, name='Strategy',
+                                   line=dict(color='#2575FC', width=2)), row=1, col=1)
+                    if bench_nv is not None:
+                        fig_p.add_trace(
+                            go.Scatter(x=bench_nv.index, y=bench_nv.values, name='Benchmark',
+                                       line=dict(color='#F25F5C', width=2, dash='dash')), row=1, col=1)
+
+                    # Row 2: Close price comparison (if available)
+                    next_row = 2
+                    if can_close:
+                        sc = pd.Series(strategy_close).dropna()
+                        sc.index = pd.to_datetime(sc.index)
+                        bc = pd.Series(benchmark_close).dropna()
+                        bc.index = pd.to_datetime(bc.index)
+                        fig_p.add_trace(
+                            go.Scatter(x=sc.index, y=sc.values, name='Strategy Close',
+                                       line=dict(color='#34495E', width=1.6)), row=2, col=1)
+                        fig_p.add_trace(
+                            go.Scatter(x=bc.index, y=bc.values, name='Benchmark Close',
+                                       line=dict(color='#E74C3C', width=1.6, dash='dash')), row=2, col=1)
+                        next_row = 3
+
+                    # Next row: Drawdown area
+                    fig_p.add_trace(
+                        go.Scatter(x=df.index, y=dd_pct.values, name='Drawdown',
+                                   line=dict(color='#D63031', width=1),
+                                   fill='tozeroy', fillcolor='rgba(248,165,165,0.6)'), row=next_row, col=1)
+
+                    # Row 4: Daily returns bar
+                    colors = np.where(returns_pct.values >= 0, '#00B894', '#E17055')
+                    fig_p.add_trace(
+                        go.Bar(x=df.index, y=returns_pct.values, name='Daily Return',
+                               marker_color=colors), row=next_row+1, col=1)
+
+                    # Row 5: Histogram
+                    ret_nonzero = returns_pct[returns_pct != 0]
+                    if len(ret_nonzero) > 0:
+                        fig_p.add_trace(
+                            go.Histogram(x=ret_nonzero.values, nbinsx=40, name='Return Dist',
+                                          marker_color='#7f8c8d'), row=next_row+2, col=1)
+
+                    fig_p.update_layout(
+                        title=dict(text=title or 'Backtest Performance', x=0.5),
+                        height=int(figsize[1] * (rows * 70 / 12) * 12),  # scale height with rows
+                        template='plotly_white',
+                        showlegend=True,
+                        bargap=0.1,
+                    )
+                    fig_p.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.08)')
+                    fig_p.update_yaxes(showgrid=True, gridcolor='rgba(0,0,0,0.08)')
+
+                    # Save & show
+                    if save_path:
+                        # Save HTML by default for Plotly
+                        if not str(save_path).lower().endswith('.html'):
+                            save_path = str(save_path) + '.html'
+                        fig_p.write_html(save_path, include_plotlyjs='cdn')
+                        self.logger.info(f"Plotly chart saved to {save_path}")
+                    if show:
+                        fig_p.show()
+                    # Return a dummy matplotlib figure for type compatibility
+                    return plt.figure(figsize=figsize)
+                except Exception as _:
+                    # Fallback to Matplotlib
+                    pass
+
+            # Matplotlib fallback
+            can_close = (strategy_close is not None) and (benchmark_close is not None)
+            rows = 5 if can_close else 4
+            fig, axes = plt.subplots(rows, 1, figsize=figsize)
             if not title:
                 title = 'Backtest Performance'
             fig.suptitle(title, fontsize=18, fontweight='bold', y=0.97)
@@ -155,8 +264,28 @@ class PerformanceChart(BaseComponent):
             for spine in ['top','right']:
                 ax1.spines[spine].set_visible(False)
 
-            # 2) Drawdown (%)
-            ax2 = axes[1]
+            # 2) Close price comparison (if available)
+            next_ax_idx = 1
+            if can_close:
+                ax_close = axes[1]
+                sc = pd.Series(strategy_close).dropna(); sc.index = pd.to_datetime(sc.index)
+                bc = pd.Series(benchmark_close).dropna(); bc.index = pd.to_datetime(bc.index)
+                ax_close.plot(sc.index, sc.values, label='Strategy Close', color='#34495E', linewidth=1.6)
+                ax_close.plot(bc.index, bc.values, label='Benchmark Close', color='#E74C3C', linewidth=1.6, linestyle='--')
+                ax_close.set_title('Close Price', fontsize=14)
+                ax_close.set_xlabel('Date', fontsize=10)
+                ax_close.set_ylabel('Price', fontsize=11)
+                ax_close.grid(True, alpha=0.25, linestyle='--')
+                ax_close.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+                ax_close.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
+                plt.setp(ax_close.xaxis.get_majorticklabels(), rotation=45, ha='right')
+                for spine in ['top','right']:
+                    ax_close.spines[spine].set_visible(False)
+                ax_close.legend(loc='upper left', frameon=False)
+                next_ax_idx = 2
+
+            # 3) Drawdown (%)
+            ax2 = axes[next_ax_idx]
             dd_pct = df['drawdown'] * 100.0
             ax2.fill_between(df.index, dd_pct.values, 0, color=color_dd_fill, alpha=0.6)
             ax2.plot(df.index, dd_pct.values, color=color_dd_line, linewidth=1.2)
@@ -171,8 +300,8 @@ class PerformanceChart(BaseComponent):
             for spine in ['top','right']:
                 ax2.spines[spine].set_visible(False)
 
-            # 3) Daily returns (%)
-            ax3 = axes[2]
+            # 4) Daily returns (%)
+            ax3 = axes[next_ax_idx + 1]
             returns_pct = df['returns'] * 100.0
             colors = [color_pos if x > 0 else color_neg for x in returns_pct]
             ax3.bar(df.index, returns_pct.values, color=colors, alpha=0.8, width=0.8)
@@ -191,8 +320,8 @@ class PerformanceChart(BaseComponent):
             for spine in ['top','right']:
                 ax3.spines[spine].set_visible(False)
 
-            # 4) Returns distribution (hist)
-            ax4 = axes[3]
+            # 5) Returns distribution (hist)
+            ax4 = axes[next_ax_idx + 2]
             ret_nonzero = returns_pct[returns_pct != 0]
             if len(ret_nonzero) > 0:
                 ax4.hist(ret_nonzero.values, bins=40, color='#7f8c8d', alpha=0.85, edgecolor='white')

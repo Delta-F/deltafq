@@ -15,6 +15,7 @@ class SignalChart(BaseComponent):
 
     def initialize(self) -> bool:
         self.logger.info("Initializing signal chart")
+        plt.ion()
         return True
 
     def plot_signals(
@@ -40,153 +41,149 @@ class SignalChart(BaseComponent):
 
             if not data.index.equals(signals.index):
                 signals = signals.reindex(data.index)
-                self.logger.info("Aligned signal indices with data indices")
 
+            # Create figure and axes
+            fig = plt.figure(figsize=figsize, facecolor='#F5F5F5')
             if show_timeline:
-                fig, axes = plt.subplots(2, 1, figsize=figsize, height_ratios=[3, 1])
-                ax_price = axes[0]
-                ax_indicator = axes[1]
+                gs = fig.add_gridspec(2, 1, height_ratios=[3, 1], hspace=0.15)
+                ax_price = fig.add_subplot(gs[0])
+                ax_indicator = fig.add_subplot(gs[1])
             else:
-                fig, ax_price = plt.subplots(1, 1, figsize=figsize)
+                ax_price = fig.add_subplot(111)
                 ax_indicator = None
+
+            ax_price.set_facecolor('#FFFFFF')
+            if ax_indicator:
+                ax_indicator.set_facecolor('#FFFFFF')
 
             price_data = data[price_column]
 
-            # Prefer candlesticks if OHLC present, fallback to line
+            # Draw price chart (candlesticks or line)
             if all(col in data.columns for col in ['Open', 'High', 'Low', 'Close']):
-                open_ = data['Open']
-                high = data['High']
-                low = data['Low']
-                close = data['Close']
-                x = mdates.date2num(data.index.to_pydatetime())
-
-                def draw_candles(ax, o, h, l, c, xvals, width=0.5):
-                    wick_color = '#666666'
-                    up_fill = '#555555'      # dark gray
-                    down_fill = '#B3B3B3'    # light gray
-                    edge_color = '#666666'
-                    for xi, oi, hi, li, ci in zip(xvals, o, h, l, c):
-                        is_up = ci >= oi
-                        color = up_fill if is_up else down_fill
-                        # wick
-                        ax.vlines(xi, li, hi, color=wick_color, linewidth=0.8, alpha=0.9)
-                        # body
-                        body_low = min(oi, ci)
-                        body_h = abs(ci - oi)
-                        if body_h == 0:
-                            ax.hlines(ci, xi - width/2, xi + width/2, color=edge_color, linewidth=1.0, alpha=0.9)
-                        else:
-                            rect = Rectangle((xi - width/2, body_low), width, body_h,
-                                             facecolor=color, edgecolor=edge_color, alpha=0.95)
-                            ax.add_patch(rect)
-
-                draw_candles(ax_price, open_.values, high.values, low.values, close.values, x, width=0.6)
-                ax_price.xaxis_date()
-                ax_price.xaxis.set_major_locator(mdates.AutoDateLocator())
-                ax_price.xaxis.set_major_formatter(mdates.ConciseDateFormatter(mdates.AutoDateLocator()))
+                self._draw_candlesticks(ax_price, data)
             else:
-                ax_price.plot(price_data.index, price_data.values,
-                              label='Price', linewidth=1.5, color='black', alpha=0.8)
+                ax_price.plot(price_data.index, price_data.values, label='Price', 
+                             linewidth=2.0, color='#2C3E50', alpha=0.9)
 
+            # Plot indicators
             if indicators:
-                # Try to style Bollinger-like keys specially
-                style_map = {
-                    'upper': dict(color='#1f77b4', linewidth=1.6, linestyle='-'),   # blue
-                    'middle': dict(color='#7f7f7f', linewidth=1.2, linestyle='--'), # dashed gray
-                    'lower': dict(color='#9467bd', linewidth=1.6, linestyle='-'),   # purple
-                }
-                palette = plt.cm.tab10(range(10))
-                for i, (name, indicator_series) in enumerate(indicators.items()):
-                    if len(indicator_series) != len(data):
-                        indicator_series = indicator_series.reindex(data.index)
-                    key = name.lower()
-                    chosen = None
-                    for k in ('upper', 'middle', 'lower'):
-                        if k in key:
-                            chosen = style_map[k]
-                            break
-                    if chosen is None:
-                        chosen = dict(color=palette[i % 10], linewidth=1.2, linestyle='-')
-                    ax_price.plot(
-                        indicator_series.index,
-                        indicator_series.values,
-                        label=name,
-                        alpha=0.9,
-                        **chosen,
-                    )
+                self._plot_indicators(ax_price, indicators, data)
 
-            buy_signals = signals == 1
-            if buy_signals.any():
-                buy_idx = price_data.index[buy_signals]
-                ax_price.scatter(
-                    buy_idx,
-                    price_data.loc[buy_idx],
-                    marker='^',
-                    s=60,
-                    facecolors='#FFD700',  # yellow fill
-                    edgecolors='#8B8000',   # dark yellow edge
-                    linewidths=0.8,
-                    label='Buy',
-                    zorder=4,
-                )
+            # Plot signals
+            self._plot_signal_markers(ax_price, price_data, signals)
 
-            sell_signals = signals == -1
-            if sell_signals.any():
-                sell_idx = price_data.index[sell_signals]
-                ax_price.scatter(
-                    sell_idx,
-                    price_data.loc[sell_idx],
-                    marker='v',
-                    s=60,
-                    facecolors='#d62728',  # red fill
-                    edgecolors='#000000',   # black edge
-                    linewidths=0.8,
-                    label='Sell',
-                    zorder=4,
-                )
+            # Apply styling
+            self._apply_ax_style(ax_price, title or f"Trading Signals Chart - {price_column}")
 
-            ax_price.set_xlabel('Date', fontsize=10)
-            ax_price.set_ylabel('Price', fontsize=10)
-            if not title:
-                title = f"Trading Signals Chart - {price_column}"
-            ax_price.set_title(title, fontsize=12, fontweight='bold')
-            ax_price.legend(loc='best', fontsize=9)
-            ax_price.grid(True, alpha=0.3)
-            ax_price.tick_params(axis='x', rotation=45)
-
-            if show_timeline:
-                signal_values = signals.astype(float)
-                signal_values[signal_values == 0] = None
-                ax_indicator.plot(signal_values.index, signal_values.values,
-                                  marker='o', markersize=3, linestyle='-', linewidth=0.5, alpha=0.5)
-                ax_indicator.axhline(y=0, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
-                ax_indicator.fill_between(signal_values.index, 0, signal_values.values,
-                                          where=(signal_values > 0),
-                                          color='green', alpha=0.2, label='Buy Zone')
-                ax_indicator.fill_between(signal_values.index, 0, signal_values.values,
-                                          where=(signal_values < 0),
-                                          color='red', alpha=0.2, label='Sell Zone')
-                ax_indicator.set_xlabel('Date', fontsize=9)
-                ax_indicator.set_ylabel('Signal', fontsize=9)
-                ax_indicator.set_title('Signal Timeline', fontsize=10)
-                ax_indicator.set_ylim(-1.5, 1.5)
-                ax_indicator.set_yticks([-1, 0, 1])
-                ax_indicator.set_yticklabels(['Sell', 'Hold', 'Buy'])
-                ax_indicator.grid(True, alpha=0.3)
-                ax_indicator.tick_params(axis='x', rotation=45)
+            # Plot timeline if requested
+            if show_timeline and ax_indicator:
+                self._plot_timeline(ax_indicator, signals)
 
             plt.tight_layout()
 
             if save_path:
-                plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='#F5F5F5')
                 self.logger.info(f"Chart saved to {save_path}")
 
             if show:
-                plt.show()
+                plt.show(block=False)
+                plt.pause(0.1)
+                fig.canvas.draw()
+                fig.canvas.flush_events()
 
             return fig
         except Exception as e:
             self.logger.info(f"Error generating signal chart: {str(e)}")
             raise
 
+    def _draw_candlesticks(self, ax, data: pd.DataFrame):
+        """Draw candlestick chart."""
+        color_up, color_down = '#E74C3C', '#27AE60'
+        color_wick, color_edge = '#34495E', '#2C3E50'
+        x = mdates.date2num(data.index.to_pydatetime())
+        o, h, l, c = data['Open'].values, data['High'].values, data['Low'].values, data['Close'].values
 
+        for xi, oi, hi, li, ci in zip(x, o, h, l, c):
+            body_color = color_up if ci >= oi else color_down
+            ax.vlines(xi, li, hi, color=color_wick, linewidth=1.0, alpha=0.7, zorder=1)
+            body_low, body_h = min(oi, ci), abs(ci - oi)
+            if body_h == 0:
+                ax.hlines(ci, xi - 0.3, xi + 0.3, color=color_edge, linewidth=1.2, alpha=0.7, zorder=2)
+            else:
+                ax.add_patch(Rectangle((xi - 0.3, body_low), 0.6, body_h,
+                                      facecolor=body_color, edgecolor=color_edge, 
+                                      linewidth=0.8, alpha=0.7, zorder=2))
+        ax.xaxis_date()
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(mdates.AutoDateLocator()))
+
+    def _plot_indicators(self, ax, indicators: Dict[str, pd.Series], data: pd.DataFrame):
+        """Plot technical indicators."""
+        style_map = {
+            'upper': {'color': '#3498DB', 'linewidth': 1.8, 'linestyle': '-', 'alpha': 0.85},
+            'middle': {'color': '#95A5A6', 'linewidth': 1.5, 'linestyle': '--', 'alpha': 0.75},
+            'lower': {'color': '#9B59B6', 'linewidth': 1.8, 'linestyle': '-', 'alpha': 0.85},
+        }
+        palette = ['#E67E22', '#F39C12', '#16A085', '#2980B9', '#8E44AD']
+
+        for i, (name, series) in enumerate(indicators.items()):
+            if len(series) != len(data):
+                series = series.reindex(data.index)
+            key = name.lower()
+            style = next((style_map[k] for k in ('upper', 'middle', 'lower') if k in key), 
+                        {'color': palette[i % len(palette)], 'linewidth': 1.5, 'linestyle': '-', 'alpha': 0.8})
+            ax.plot(series.index, series.values, label=name, zorder=3, **style)
+
+    def _plot_signal_markers(self, ax, price_data: pd.Series, signals: pd.Series):
+        """Plot buy and sell signal markers."""
+        signal_configs = [
+            (signals == 1, '^', '#E74C3C', '#C0392B', 'Buy'),
+            (signals == -1, 'v', '#27AE60', '#229954', 'Sell')
+        ]
+        for signal_mask, marker, face_color, edge_color, label in signal_configs:
+            if signal_mask.any():
+                idx = price_data.index[signal_mask]
+                ax.scatter(idx, price_data.loc[idx], marker=marker, s=100,
+                          facecolors=face_color, edgecolors=edge_color, linewidths=1.2,
+                          label=label, zorder=5, alpha=0.9)
+
+    def _apply_ax_style(self, ax, title: str):
+        """Apply styling to axes."""
+        ax.set_xlabel('Date', fontsize=11, color='#34495E', fontweight='medium')
+        ax.set_ylabel('Price', fontsize=11, color='#34495E', fontweight='medium')
+        ax.set_title(title, fontsize=14, fontweight='bold', color='#2C3E50', pad=15)
+        ax.legend(loc='upper left', fontsize=10, framealpha=0.9, 
+                 facecolor='white', edgecolor='#BDC3C7', fancybox=True, shadow=True)
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8, color='#BDC3C7')
+        ax.set_axisbelow(True)
+        for spine in ['top', 'right']:
+            ax.spines[spine].set_visible(False)
+        for spine in ['left', 'bottom']:
+            ax.spines[spine].set_color('#BDC3C7')
+        ax.tick_params(axis='x', rotation=45, colors='#34495E', labelsize=9)
+        ax.tick_params(axis='y', colors='#34495E', labelsize=9)
+
+    def _plot_timeline(self, ax, signals: pd.Series):
+        """Plot signal timeline."""
+        signal_values = signals.astype(float).replace(0, None)
+        ax.plot(signal_values.index, signal_values.values, marker='o', markersize=4,
+               linestyle='-', linewidth=1.0, alpha=0.6, color='#7F8C8D', zorder=2)
+        ax.axhline(y=0, color='#95A5A6', linestyle='--', linewidth=1.0, alpha=0.5)
+        ax.fill_between(signal_values.index, 0, signal_values.values, where=(signal_values > 0),
+                       color='#E74C3C', alpha=0.25, label='Buy Zone', zorder=1)
+        ax.fill_between(signal_values.index, 0, signal_values.values, where=(signal_values < 0),
+                       color='#27AE60', alpha=0.25, label='Sell Zone', zorder=1)
+        ax.set_xlabel('Date', fontsize=10, color='#34495E')
+        ax.set_ylabel('Signal', fontsize=10, color='#34495E')
+        ax.set_title('Signal Timeline', fontsize=11, fontweight='bold', color='#2C3E50')
+        ax.set_ylim(-1.5, 1.5)
+        ax.set_yticks([-1, 0, 1])
+        ax.set_yticklabels(['Sell', 'Hold', 'Buy'])
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8, color='#BDC3C7')
+        ax.set_axisbelow(True)
+        for spine in ['top', 'right']:
+            ax.spines[spine].set_visible(False)
+        for spine in ['left', 'bottom']:
+            ax.spines[spine].set_color('#BDC3C7')
+        ax.tick_params(axis='x', rotation=45, colors='#34495E', labelsize=9)
+        ax.tick_params(axis='y', colors='#34495E', labelsize=9)

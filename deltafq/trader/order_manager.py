@@ -22,7 +22,7 @@ class OrderManager(BaseComponent):
         self.logger.info("Initializing order manager")
         return True
     
-    def create_order(self, symbol: str, quantity: int, order_type: str = "market", 
+    def create_order(self, symbol: str, quantity: int, order_type: str = "limit", 
                     price: Optional[float] = None, stop_price: Optional[float] = None) -> str:
         """Create a new order."""
         self.order_counter += 1
