@@ -1,350 +1,309 @@
-"""
-Strategy performance analysis charts for DeltaFQ.
-"""
+"""Performance visualization utilities."""
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+from typing import Optional
+
 import matplotlib.dates as mdates
-from matplotlib.ticker import FuncFormatter
-from typing import Dict, Any, Optional
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from ..core.base import BaseComponent
+
+try:  # pragma: no cover - optional dependency
+    from scipy.stats import gaussian_kde
+except ImportError:  # pragma: no cover
+    gaussian_kde = None
 
 
 class PerformanceChart(BaseComponent):
-    """Chart class for strategy performance visualization."""
-    
+    """Visualize backtest performance with stacked panels."""
+
     def initialize(self) -> bool:
-        """Initialize the performance chart component."""
-        self.logger.info("Init performance chart")
-        # Set default style
-        plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.available else 'default')
+        self.logger.info("Initializing performance chart")
         return True
-    
-    def plot_performance(
-        self,
-        results: Dict[str, Any],
-        title: Optional[str] = None,
-        figsize: tuple = (12, 8),
-        show: bool = True,
-        save_path: Optional[str] = None
-    ) -> plt.Figure:
-        """
-        Plot strategy performance analysis chart.
-        
-        Args:
-            results: Dictionary containing backtest results
-            title: Chart title
-            figsize: Figure size tuple (width, height)
-            show: Whether to display the chart
-            save_path: Optional path to save the chart
-            
-        Returns:
-            matplotlib Figure object
-        """
-        try:
-            self.logger.info("Generating performance analysis chart")
-            
-            # Placeholder implementation - to be extended later
-            fig, ax = plt.subplots(figsize=figsize)
-            
-            if not title:
-                title = "Strategy Performance Analysis"
-            
-            ax.text(0.5, 0.5, 
-                   'Performance Chart Module\n(Implementation coming soon)',
-                   horizontalalignment='center',
-                   verticalalignment='center',
-                   transform=ax.transAxes,
-                   fontsize=14)
-            
-            ax.set_title(title, fontsize=12, fontweight='bold')
-            ax.set_xlim(0, 1)
-            ax.set_ylim(0, 1)
-            ax.axis('off')
-            
-            plt.tight_layout()
-            
-            if save_path:
-                plt.savefig(save_path, dpi=300, bbox_inches='tight')
-                self.logger.info(f"Chart saved to {save_path}")
-            
-            if show:
-                plt.show()
-            
-            return fig
-            
-        except Exception as e:
-            self.logger.error(f"Error generating performance chart: {str(e)}")
-            raise
 
     def plot_backtest_charts(
         self,
         values_df: pd.DataFrame,
         benchmark_close: Optional[pd.Series] = None,
-        strategy_close: Optional[pd.Series] = None,
         title: Optional[str] = None,
-        figsize: tuple = (16, 12),
-        show: bool = True,
         save_path: Optional[str] = None,
-        use_plotly: bool = True,
-    ) -> plt.Figure:
-        """
-        Visualize strategy performance with up to five stacked plots:
-        1) Equity curve (normalized) with optional benchmark
-        2) Close price comparison (strategy vs benchmark) — shown when strategy_close & benchmark_close provided
-        3) Drawdown (%), filled area
-        4) Daily returns (%) bar chart
-        5) Returns distribution (histogram)
+        use_plotly: bool = False,
+    ) -> None:
+        plt.rcParams["font.sans-serif"] = [
+            "Microsoft YaHei",
+            "SimHei",
+            "Heiti TC",
+            "Arial Unicode MS",
+            "DejaVu Sans",
+        ]
+        plt.rcParams["axes.unicode_minus"] = False
 
-        Expects values_df to include columns: 'total_value', optional 'returns', optional 'drawdown'.
-        Index should be datetime; if a 'date' column exists, it will be used as index.
-        """
-        try:
-            self.logger.info("Generating backtest charts")
+        df = values_df.copy()
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.set_index("date")
+        df.index = pd.to_datetime(df.index)
 
-            # Prepare index
-            df = values_df.copy()
-            if 'date' in df.columns:
-                df['date'] = pd.to_datetime(df['date'])
-                df = df.set_index('date')
-            df.index = pd.to_datetime(df.index)
+        if "total_value" not in df.columns:
+            raise KeyError("values_df must contain 'total_value'")
 
-            # Sanity checks
-            if 'total_value' not in df.columns:
-                raise ValueError("values_df must contain 'total_value' column")
+        if "returns" not in df.columns:
+            df["returns"] = df["total_value"].pct_change().fillna(0.0)
 
-            # Compute returns/drawdown if missing
-            if 'returns' not in df.columns:
-                df['returns'] = df['total_value'].pct_change().fillna(0.0)
-            if 'drawdown' not in df.columns:
-                rolling_max = df['total_value'].expanding().max()
-                df['drawdown'] = (df['total_value'] - rolling_max) / rolling_max
+        has_price = "price" in df.columns
 
-            # Palette
-            color_eq = '#2575FC'       # strategy line
-            color_bm = '#F25F5C'       # benchmark line
-            color_pos = '#00B894'      # positive bar
-            color_neg = '#E17055'      # negative bar
-            color_dd_fill = '#F8A5A5'  # drawdown fill
-            color_dd_line = '#D63031'  # drawdown line
+        # Pre-compute series used by both matplotlib and plotly paths
+        strategy_nv = df["total_value"] / df["total_value"].iloc[0]
+        drawdown = (df["total_value"].expanding().max() - df["total_value"]) / df["total_value"].expanding().max() * -100
+        returns_pct = df["returns"] * 100
+        price_norm = df["price"].astype(float) / df["price"].iloc[0] if has_price else None
+        bench_norm_price = None
+        bench_norm_nv = None
+        if benchmark_close is not None:
+            bench_series = pd.Series(benchmark_close).astype(float)
+            bench_series.index = pd.to_datetime(bench_series.index)
+            bench_series = bench_series.sort_index().reindex(df.index).fillna(method="ffill").dropna()
+            if not bench_series.empty:
+                bench_returns = bench_series.pct_change().fillna(0.0)
+                bench_nv = (1 + bench_returns).cumprod()
+                bench_norm_nv = bench_nv / bench_nv.iloc[0]
+                if has_price:
+                    bench_norm_price = bench_series / bench_series.iloc[0]
 
-            # Try Plotly if requested
-            if use_plotly:
-                try:
-                    from plotly.subplots import make_subplots
-                    import plotly.graph_objects as go
+        if use_plotly:
+            try:
+                import plotly.graph_objects as go
+                from plotly.subplots import make_subplots
+            except ImportError as exc:  # pragma: no cover
+                self.logger.warning("Plotly not available (%s); falling back to Matplotlib", exc)
+            else:
+                rows = 5
+                fig = make_subplots(
+                    rows=rows,
+                    cols=1,
+                    shared_xaxes=True,
+                    vertical_spacing=0.04,
+                    specs=[[{"type": "scatter"}]] * rows,
+                    row_heights=[0.18, 0.22, 0.2, 0.2, 0.2],
+                )
 
-                    # Prepare normalized series
-                    strategy_nv = df['total_value'] / float(df['total_value'].iloc[0])
-                    bench_nv = None
-                    if benchmark_close is not None and not benchmark_close.empty:
-                        b = pd.Series(benchmark_close).dropna()
-                        b.index = pd.to_datetime(b.index)
-                        b_ret = b.pct_change().fillna(0.0)
-                        bench_nv = (1.0 + b_ret).cumprod()
-                        bench_nv = bench_nv / float(bench_nv.iloc[0])
-
-                    returns_pct = (df['returns'] * 100.0).fillna(0.0)
-                    dd_pct = (df['drawdown'] * 100.0).fillna(0.0)
-
-                    # Determine rows: add one if we can plot close comparison
-                    can_close = (strategy_close is not None) and (benchmark_close is not None)
-                    rows = 5 if can_close else 4
-
-                    fig_p = make_subplots(
-                        rows=rows, cols=1, shared_xaxes=True,
-                        vertical_spacing=0.06,
-                        subplot_titles=(
-                            'Equity (normalized)',
-                            'Close Price',
-                            'Drawdown',
-                            'Daily Return',
-                            'Return Distribution (trading days)'
+                if has_price and price_norm is not None:
+                    fig.add_trace(
+                        go.Scatter(x=df.index, y=price_norm, name="策略收盘价", line=dict(color="#2E86AB", width=1.5)),
+                        row=1,
+                        col=1,
+                    )
+                    if bench_norm_price is not None:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=bench_norm_price.index,
+                                y=bench_norm_price.values,
+                                name="基准收盘价",
+                                line=dict(color="#E63946", width=1.5, dash="dash"),
+                            ),
+                            row=1,
+                            col=1,
                         )
+                fig.add_trace(
+                    go.Scatter(x=df.index, y=strategy_nv, name="策略净值", line=dict(color="#2E86AB", width=2)),
+                    row=2,
+                    col=1,
+                )
+                if bench_norm_nv is not None:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=bench_norm_nv.index,
+                            y=bench_norm_nv.values,
+                            name="基准净值",
+                            line=dict(color="#E63946", width=2, dash="dash"),
+                        ),
+                        row=2,
+                        col=1,
+                    )
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=drawdown,
+                        name="回撤",
+                        fill="tozeroy",
+                        line=dict(color="#C1121F"),
+                        fillcolor="rgba(242,66,54,0.4)",
+                    ),
+                    row=3,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Bar(x=df.index, y=returns_pct, name="每日盈亏", marker_color=np.where(returns_pct >= 0, "#06A77D", "#D00000")),
+                    row=4,
+                    col=1,
+                )
+                returns_for_dist = returns_pct[returns_pct != 0]
+                if len(returns_for_dist) > 1:
+                    if gaussian_kde is not None:
+                        kde = gaussian_kde(returns_for_dist)
+                        kde.set_bandwidth(kde.factor * 0.5)
+                        x_range = np.linspace(returns_for_dist.min(), returns_for_dist.max(), 300)
+                        density = kde(x_range)
+                        bin_width = x_range[1] - x_range[0]
+                        frequency = density * bin_width * len(returns_for_dist)
+                        fig.add_trace(
+                            go.Scatter(
+                                x=x_range,
+                                y=frequency,
+                                name="盈亏分布",
+                                fill="tozeroy",
+                                line=dict(color="#8B6F5E"),
+                                fillcolor="rgba(107,76,63,0.6)",
+                            ),
+                            row=5,
+                            col=1,
+                        )
+                    else:
+                        fig.add_trace(
+                            go.Histogram(x=returns_for_dist, name="盈亏分布", nbinsx=40, marker_color="#6B4C3F"),
+                            row=5,
+                            col=1,
+                        )
+                else:
+                    fig.add_trace(
+                        go.Histogram(x=returns_pct, name="盈亏分布", nbinsx=10, marker_color="#6B4C3F"),
+                        row=5,
+                        col=1,
                     )
 
-                    # Row 1: Equity
-                    fig_p.add_trace(
-                        go.Scatter(x=df.index, y=strategy_nv.values, name='Strategy',
-                                   line=dict(color='#2575FC', width=2)), row=1, col=1)
-                    if bench_nv is not None:
-                        fig_p.add_trace(
-                            go.Scatter(x=bench_nv.index, y=bench_nv.values, name='Benchmark',
-                                       line=dict(color='#F25F5C', width=2, dash='dash')), row=1, col=1)
+                fig.update_xaxes(title_text="日期", row=5, col=1)
+                fig.update_yaxes(title_text="价格(归一化)", row=1, col=1)
+                fig.update_yaxes(title_text="净值", row=2, col=1)
+                fig.update_yaxes(title_text="回撤 (%)", row=3, col=1)
+                fig.update_yaxes(title_text="收益率 (%)", row=4, col=1)
+                fig.update_yaxes(title_text="频数", row=5, col=1)
 
-                    # Row 2: Close price comparison (if available)
-                    next_row = 2
-                    if can_close:
-                        sc = pd.Series(strategy_close).dropna()
-                        sc.index = pd.to_datetime(sc.index)
-                        bc = pd.Series(benchmark_close).dropna()
-                        bc.index = pd.to_datetime(bc.index)
-                        fig_p.add_trace(
-                            go.Scatter(x=sc.index, y=sc.values, name='Strategy Close',
-                                       line=dict(color='#34495E', width=1.6)), row=2, col=1)
-                        fig_p.add_trace(
-                            go.Scatter(x=bc.index, y=bc.values, name='Benchmark Close',
-                                       line=dict(color='#E74C3C', width=1.6, dash='dash')), row=2, col=1)
-                        next_row = 3
+                fig.update_layout(title=title or "策略表现分析", template="plotly_white", showlegend=True)
 
-                    # Next row: Drawdown area
-                    fig_p.add_trace(
-                        go.Scatter(x=df.index, y=dd_pct.values, name='Drawdown',
-                                   line=dict(color='#D63031', width=1),
-                                   fill='tozeroy', fillcolor='rgba(248,165,165,0.6)'), row=next_row, col=1)
+                if save_path:
+                    html_path = save_path if str(save_path).lower().endswith(".html") else f"{save_path}.html"
+                    fig.write_html(html_path, include_plotlyjs="cdn")
+                    self.logger.info("Chart saved to %s", html_path)
+                else:
+                    fig.show()
+                return
 
-                    # Row 4: Daily returns bar
-                    colors = np.where(returns_pct.values >= 0, '#00B894', '#E17055')
-                    fig_p.add_trace(
-                        go.Bar(x=df.index, y=returns_pct.values, name='Daily Return',
-                               marker_color=colors), row=next_row+1, col=1)
+        # ------------------------------ Matplotlib branch ------------------------------
+        n_panels = 5 if has_price else 4
+        fig, axes = plt.subplots(n_panels, 1, figsize=(16, 14 if has_price else 12))
+        fig.suptitle(title or "策略表现分析", fontsize=16, y=0.995)
 
-                    # Row 5: Histogram
-                    ret_nonzero = returns_pct[returns_pct != 0]
-                    if len(ret_nonzero) > 0:
-                        fig_p.add_trace(
-                            go.Histogram(x=ret_nonzero.values, nbinsx=40, name='Return Dist',
-                                          marker_color='#7f8c8d'), row=next_row+2, col=1)
+        idx = 0
+        if has_price and price_norm is not None:
+            self._plot_price_compare(ax=axes[idx], df=df, benchmark_close=benchmark_close, price_norm=price_norm, bench_norm=bench_norm_price)
+            idx += 1
 
-                    fig_p.update_layout(
-                        title=dict(text=title or 'Backtest Performance', x=0.5),
-                        height=int(figsize[1] * (rows * 70 / 12) * 12),  # scale height with rows
-                        template='plotly_white',
-                        showlegend=True,
-                        bargap=0.1,
-                    )
-                    fig_p.update_xaxes(showgrid=True, gridcolor='rgba(0,0,0,0.08)')
-                    fig_p.update_yaxes(showgrid=True, gridcolor='rgba(0,0,0,0.08)')
+        self._plot_net_value(ax=axes[idx], df=df, strategy_nv=strategy_nv, bench_norm=bench_norm_nv)
+        self._plot_drawdown(ax=axes[idx + 1], drawdown=drawdown)
+        self._plot_daily_returns(ax=axes[idx + 2], returns_pct=returns_pct)
+        self._plot_return_distribution(ax=axes[idx + 3], returns_pct=returns_pct)
 
-                    # Save & show
-                    if save_path:
-                        # Save HTML by default for Plotly
-                        if not str(save_path).lower().endswith('.html'):
-                            save_path = str(save_path) + '.html'
-                        fig_p.write_html(save_path, include_plotlyjs='cdn')
-                        self.logger.info(f"Plotly chart saved to {save_path}")
-                    if show:
-                        fig_p.show()
-                    # Return a dummy matplotlib figure for type compatibility
-                    return plt.figure(figsize=figsize)
-                except Exception as _:
-                    # Fallback to Matplotlib
-                    pass
+        for ax in axes[:-1]:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+            ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
 
-            # Matplotlib fallback
-            can_close = (strategy_close is not None) and (benchmark_close is not None)
-            rows = 5 if can_close else 4
-            fig, axes = plt.subplots(rows, 1, figsize=figsize)
-            if not title:
-                title = 'Backtest Performance'
-            fig.suptitle(title, fontsize=18, fontweight='bold', y=0.97)
+        plt.tight_layout(rect=[0, 0, 1, 0.97])
 
-            # 1) Equity curve normalized
-            ax1 = axes[0]
-            strategy_nv = df['total_value'] / float(df['total_value'].iloc[0])
-            ax1.plot(df.index, strategy_nv.values, linewidth=2.2, color=color_eq, label='Strategy')
+        if save_path:
+            fig.savefig(save_path, dpi=300, bbox_inches="tight")
+            self.logger.info("Chart saved to %s", save_path)
+        else:
+            plt.show()
 
-            if benchmark_close is not None and not benchmark_close.empty:
-                b = pd.Series(benchmark_close).dropna()
-                b.index = pd.to_datetime(b.index)
-                b_ret = b.pct_change().fillna(0.0)
-                b_nv = (1.0 + b_ret).cumprod()
-                b_nv = b_nv / float(b_nv.iloc[0])
-                ax1.plot(b_nv.index, b_nv.values, linewidth=2.0, color=color_bm, linestyle='--', label='Benchmark')
-                ax1.legend(loc='upper left', frameon=False)
+    # ------------------------------------------------------------------
+    # Individual panels (Matplotlib)
+    # ------------------------------------------------------------------
 
-            ax1.set_title('Equity (normalized)', fontsize=14)
-            ax1.set_xlabel('Date', fontsize=10)
-            ax1.set_ylabel('Net Value', fontsize=11)
-            ax1.grid(True, alpha=0.25, linestyle='--')
-            ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-            ax1.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-            plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
-            for spine in ['top','right']:
-                ax1.spines[spine].set_visible(False)
+    def _plot_price_compare(
+        self,
+        ax: plt.Axes,
+        df: pd.DataFrame,
+        benchmark_close: Optional[pd.Series],
+        price_norm: pd.Series,
+        bench_norm: Optional[pd.Series],
+    ) -> None:
+        ax.plot(df.index, price_norm, linewidth=1.5, color="#2E86AB", label="策略收盘价")
 
-            # 2) Close price comparison (if available)
-            next_ax_idx = 1
-            if can_close:
-                ax_close = axes[1]
-                sc = pd.Series(strategy_close).dropna(); sc.index = pd.to_datetime(sc.index)
-                bc = pd.Series(benchmark_close).dropna(); bc.index = pd.to_datetime(bc.index)
-                ax_close.plot(sc.index, sc.values, label='Strategy Close', color='#34495E', linewidth=1.6)
-                ax_close.plot(bc.index, bc.values, label='Benchmark Close', color='#E74C3C', linewidth=1.6, linestyle='--')
-                ax_close.set_title('Close Price', fontsize=14)
-                ax_close.set_xlabel('Date', fontsize=10)
-                ax_close.set_ylabel('Price', fontsize=11)
-                ax_close.grid(True, alpha=0.25, linestyle='--')
-                ax_close.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-                ax_close.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-                plt.setp(ax_close.xaxis.get_majorticklabels(), rotation=45, ha='right')
-                for spine in ['top','right']:
-                    ax_close.spines[spine].set_visible(False)
-                ax_close.legend(loc='upper left', frameon=False)
-                next_ax_idx = 2
+        if bench_norm is not None:
+            ax.plot(bench_norm.index, bench_norm.values, linewidth=1.5, color="#E63946", linestyle="--", label="基准收盘价")
+            ax.legend()
 
-            # 3) Drawdown (%)
-            ax2 = axes[next_ax_idx]
-            dd_pct = df['drawdown'] * 100.0
-            ax2.fill_between(df.index, dd_pct.values, 0, color=color_dd_fill, alpha=0.6)
-            ax2.plot(df.index, dd_pct.values, color=color_dd_line, linewidth=1.2)
-            ax2.set_title('Drawdown', fontsize=14)
-            ax2.set_xlabel('Date', fontsize=10)
-            ax2.set_ylabel('Drawdown', fontsize=11)
-            ax2.yaxis.set_major_formatter(FuncFormatter(lambda y,_: f"{y:.0f}%"))
-            ax2.grid(True, alpha=0.25, linestyle='--')
-            ax2.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-            ax2.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-            plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
-            for spine in ['top','right']:
-                ax2.spines[spine].set_visible(False)
+        ax.set_title("价格对比", fontsize=14)
+        ax.set_xlabel("日期", fontsize=11)
+        ax.set_ylabel("价格(归一化)", fontsize=11)
+        ax.grid(True, alpha=0.3, linestyle="--")
 
-            # 4) Daily returns (%)
-            ax3 = axes[next_ax_idx + 1]
-            returns_pct = df['returns'] * 100.0
-            colors = [color_pos if x > 0 else color_neg for x in returns_pct]
-            ax3.bar(df.index, returns_pct.values, color=colors, alpha=0.8, width=0.8)
-            ax3.axhline(y=0, color='black', linewidth=0.5, linestyle='-')
-            y_abs_max = max(abs(returns_pct.max()), abs(returns_pct.min()))
-            y_abs_max = y_abs_max if y_abs_max > 0 else 1.0
-            ax3.set_ylim(-y_abs_max * 1.1, y_abs_max * 1.1)
-            ax3.set_title('Daily Return', fontsize=14)
-            ax3.set_xlabel('Date', fontsize=10)
-            ax3.set_ylabel('Return', fontsize=11)
-            ax3.yaxis.set_major_formatter(FuncFormatter(lambda y,_: f"{y:.1f}%"))
-            ax3.grid(True, alpha=0.25, linestyle='--', axis='y')
-            ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-            ax3.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-            plt.setp(ax3.xaxis.get_majorticklabels(), rotation=45, ha='right')
-            for spine in ['top','right']:
-                ax3.spines[spine].set_visible(False)
+    def _plot_net_value(
+        self,
+        ax: plt.Axes,
+        df: pd.DataFrame,
+        strategy_nv: pd.Series,
+        bench_norm: Optional[pd.Series],
+    ) -> None:
+        ax.plot(df.index, strategy_nv, linewidth=2, color="#2E86AB", label="策略净值")
 
-            # 5) Returns distribution (hist)
-            ax4 = axes[next_ax_idx + 2]
-            ret_nonzero = returns_pct[returns_pct != 0]
-            if len(ret_nonzero) > 0:
-                ax4.hist(ret_nonzero.values, bins=40, color='#7f8c8d', alpha=0.85, edgecolor='white')
-                ax4.axvline(x=0, color='gray', linestyle='--', linewidth=1, alpha=0.8)
-            ax4.set_title('Return Distribution (trading days)', fontsize=14)
-            ax4.set_xlabel('Return (%)', fontsize=11)
-            ax4.set_ylabel('Frequency', fontsize=11)
-            ax4.grid(True, alpha=0.25, linestyle='--', axis='y')
-            for spine in ['top','right']:
-                ax4.spines[spine].set_visible(False)
+        if bench_norm is not None:
+            ax.plot(bench_norm.index, bench_norm.values, linewidth=2, color="#E63946", linestyle="--", label="基准净值")
+            ax.legend()
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+        ax.set_title("账户净值", fontsize=14)
+        ax.set_xlabel("日期", fontsize=11)
+        ax.set_ylabel("净值(起始=1)", fontsize=11)
+        ax.grid(True, alpha=0.3, linestyle="--")
 
-            if save_path:
-                plt.savefig(save_path, dpi=300, bbox_inches='tight')
-                self.logger.info(f"Chart saved to {save_path}")
+    def _plot_drawdown(self, ax: plt.Axes, drawdown: pd.Series) -> None:
+        ax.fill_between(drawdown.index, drawdown, 0, color="#F24236", alpha=0.5)
+        ax.plot(drawdown.index, drawdown, color="#C1121F", linewidth=1.5)
+        ax.set_title("净值回撤", fontsize=14)
+        ax.set_xlabel("日期", fontsize=11)
+        ax.set_ylabel("回撤 (%)", fontsize=11)
+        ax.grid(True, alpha=0.3, linestyle="--")
 
-            if show:
-                plt.show()
+    def _plot_daily_returns(self, ax: plt.Axes, returns_pct: pd.Series) -> None:
+        colors = ["#06A77D" if x > 0 else "#D00000" for x in returns_pct]
+        ax.bar(returns_pct.index, returns_pct, color=colors, alpha=0.7, width=0.8)
+        ax.axhline(y=0, color="black", linewidth=0.5)
 
-            return fig
+        max_return = abs(returns_pct.max()) if returns_pct.max() != 0 else 1
+        min_return = abs(returns_pct.min()) if returns_pct.min() != 0 else 1
+        y_max = max(max_return, min_return) * 1.1
+        ax.set_ylim(-y_max, y_max)
 
-        except Exception as e:
-            self.logger.error(f"Error generating backtest charts: {str(e)}")
-            raise
+        ax.set_title("每日盈亏", fontsize=14)
+        ax.set_xlabel("日期", fontsize=11)
+        ax.set_ylabel("收益率 (%)", fontsize=11)
+        ax.grid(True, alpha=0.3, linestyle="--", axis="y")
+
+    def _plot_return_distribution(self, ax: plt.Axes, returns_pct: pd.Series) -> None:
+        returns_for_dist = returns_pct[returns_pct != 0]
+        ax.set_title("盈亏分布（已交易日期）", fontsize=14)
+        ax.set_xlabel("盈亏值 (%)", fontsize=11)
+        ax.set_ylabel("频数", fontsize=11)
+        ax.grid(True, alpha=0.3, linestyle="--", axis="y")
+
+        if len(returns_for_dist) < 2:
+            return
+
+        if gaussian_kde is None:
+            ax.hist(returns_for_dist, bins=40, color="#6B4C3F", alpha=0.7, edgecolor="white")
+            ax.axvline(x=0, color="gray", linestyle="--", linewidth=1, alpha=0.7)
+            return
+
+        kde = gaussian_kde(returns_for_dist)
+        kde.set_bandwidth(kde.factor * 0.5)
+        x_range = np.linspace(returns_for_dist.min(), returns_for_dist.max(), 300)
+        density = kde(x_range)
+        bin_width = x_range[1] - x_range[0]
+        frequency = density * bin_width * len(returns_for_dist)
+
+        ax.fill_between(x_range, 0, frequency, color="#6B4C3F", alpha=0.7)
+        ax.plot(x_range, frequency, color="#8B6F5E", linewidth=2)
+        ax.axvline(x=0, color="gray", linestyle="--", linewidth=1, alpha=0.7)
 

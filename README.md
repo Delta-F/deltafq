@@ -1,15 +1,15 @@
 # DeltaFQ
 
-Modern Python library for strategy research, backtesting, paper/live trading, and beautiful reporting.
+Modern Python library for strategy research, backtesting, paper/live trading, and streamlined reporting.
 
 ## Highlights
 
-- **Clean architecture**: `data` → `strategy` (signals) → `backtest` (execution) → `performance` (metrics) → `reporter` (text + charts)
-- **Execution engine**: Unified order execution for paper/live trading via a `Broker` abstraction
+- **Clean architecture**: `data` → `strategy` (signals) → `backtest` (execution + metrics)
+- **Execution engine**: Unified order routing for paper/live trading via a `Broker` abstraction
 - **Indicators**: Rich `TechnicalIndicators` (SMA/EMA/RSI/KDJ/BOLL/ATR/…)
-- **Signals**: Simple, composable `SignalGenerator` (e.g., Bollinger `touch`/`cross`/`cross_current`)
-- **Charts**: Matplotlib by default, optional Plotly interactive performance charts
-- **Reports**: Console-friendly summary with i18n (Chinese/English) + visual charts
+- **Signals**: Simple, composable `SignalGenerator` helpers (e.g., Bollinger `touch`/`cross`/`cross_current`)
+- **Reports**: Console-friendly summary with i18n (Chinese/English) powered by `PerformanceReporter`
+- **Charts**: `PerformanceChart` delivers Matplotlib or Plotly (optional) performance dashboards
 
 ## Install
 
@@ -22,37 +22,48 @@ pip install deltafq
 ```python
 import deltafq as dfq
 
-symbol = 'AAPL'
-fetcher = dfq.data.DataFetcher(); indicators = dfq.indicators.TechnicalIndicators()
+symbol = "AAPL"
+fetcher = dfq.data.DataFetcher()
+indicators = dfq.indicators.TechnicalIndicators()
 generator = dfq.strategy.SignalGenerator()
-engine = dfq.backtest.BacktestEngine(initial_capital=100000)
-perf = dfq.backtest.PerformanceAnalyzer(); reporter = dfq.backtest.BacktestReporter()
+engine = dfq.backtest.BacktestEngine(initial_capital=100_000)
+reporter = dfq.backtest.PerformanceReporter()
+chart = dfq.charts.PerformanceChart()
 
-data = fetcher.fetch_data(symbol, '2023-01-01', '2023-12-31', clean=True)
-bands = indicators.boll(data['Close'], period=20, std_dev=2)
-signals = generator.boll_signals(price=data['Close'], bands=bands, method='cross_current')
+data = fetcher.fetch_data(symbol, "2023-01-01", "2023-12-31", clean=True)
+bands = indicators.boll(data["Close"], period=20, std_dev=2)
+signals = generator.boll_signals(price=data["Close"], bands=bands, method="cross_current")
 
-trades_df, values_df = engine.run_backtest(symbol, signals, data['Close'], strategy_name='BOLL')
-values_df, metrics = perf.get_performance_metrics(symbol, trades_df, values_df, engine.initial_capital)
+trades_df, values_df = engine.run_backtest(symbol, signals, data["Close"], strategy_name="BOLL")
 
-# Text + charts; pass use_plotly=True inside reporter if you want interactive charts
-reporter.generate_visual_report(metrics=metrics, values_df=values_df, title=f'{symbol} BOLL Strategy')
+# Text summary (zh/en available)
+reporter.print_summary(
+    symbol=symbol,
+    trades_df=trades_df,
+    values_df=values_df,
+    title=f"{symbol} BOLL Strategy",
+    language="en",
+)
+
+# Optional performance dashboard (Matplotlib by default; set use_plotly=True for interactive charts)
+chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL Strategy")
 ```
 
 ## What’s inside
 
 - `deltafq/data`: fetching, cleaning, validation
 - `deltafq/indicators`: classic TA indicators
-- `deltafq/strategy`: signal generation + signal combination
-- `deltafq/backtest`: execution via `ExecutionEngine`; performance via `PerformanceAnalyzer`; reporting via `BacktestReporter`
+- `deltafq/strategy`: signal generation + BaseStrategy helpers
+- `deltafq/backtest`: execution via `ExecutionEngine`; reporting via `PerformanceReporter`
 - `deltafq/charts`: signal and performance charts (Matplotlib + optional Plotly)
 
 ## Examples
 
 See the `examples/` folder for ready-to-run scripts:
 
-- Compare indicators and signals
-- Run a Bollinger strategy and generate a full report
+- `04_backtest_result.py`: Bollinger strategy summary + charts
+- `05_visualize_charts.py`: standalone visualization demos
+- `06_base_strategy`: implement a moving-average cross using `BaseStrategy`
 
 ## Contributing
 

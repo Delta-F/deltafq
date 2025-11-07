@@ -8,6 +8,8 @@ from typing import List, Optional
 from ..core.base import BaseComponent
 from ..core.exceptions import DataError
 from .cleaner import DataCleaner
+import warnings
+warnings.filterwarnings('ignore')
 
 
 class DataFetcher(BaseComponent):

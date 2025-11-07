@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+"""Example: implement and backtest a strategy derived from BaseStrategy."""
+
+from __future__ import annotations
+
+import pandas as pd
+
+from deltafq.backtest import BacktestEngine, PerformanceReporter
+from deltafq.data import DataFetcher
+from deltafq.strategy.base_strategy import BaseStrategy
+
+
+class MovingAverageCrossStrategy(BaseStrategy):
+    """Simple moving-average cross strategy built on BaseStrategy."""
+
+    def __init__(self, short_window: int = 10, long_window: int = 30, name: str | None = None, **kwargs) -> None:
+        if short_window >= long_window:
+            raise ValueError("short_window must be smaller than long_window")
+        super().__init__(name=name or f"MA_Cross_{short_window}_{long_window}", **kwargs)
+        self.short_window = short_window
+        self.long_window = long_window
+
+    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
+        if "Close" not in data.columns:
+            raise KeyError("DataFrame must include a 'Close' column for price data")
+
+        close = data["Close"].astype(float)
+        short_ma = close.rolling(self.short_window, min_periods=self.short_window).mean()
+        long_ma = close.rolling(self.long_window, min_periods=self.long_window).mean()
+
+        raw_signal = pd.Series(0, index=close.index, dtype=int)
+        raw_signal[short_ma > long_ma] = 1
+        raw_signal[short_ma < long_ma] = -1
+
+        # Shift by one day to avoid look-ahead bias
+        return raw_signal.shift(1).fillna(0).astype(int)
+
+
+def main() -> None:
+    fetcher = DataFetcher()
+    engine = BacktestEngine(initial_capital=1_000_000, commission=0.001)
+    reporter = PerformanceReporter()
+
+    symbol = "601398.SS"
+    start_date = "2023-01-01"
+    end_date = "2024-12-31"
+
+    data = fetcher.fetch_data(symbol, start_date, end_date, clean=True)
+    if data.empty:
+        raise RuntimeError("Fetched data is empty; check symbol or date range.")
+
+    strategy = MovingAverageCrossStrategy(short_window=10, long_window=30)
+    strategy.initialize()
+
+    signals = strategy.generate_signals(data)
+    if signals.empty:
+        raise RuntimeError("Generated signals are empty; verify strategy logic.")
+
+    trades_df, values_df = engine.run_backtest(symbol, signals, data["Close"], strategy_name=strategy.name)
+    if values_df.empty:
+        raise RuntimeError("Backtest returned no portfolio values; check input data.")
+
+    reporter.initialize()
+    reporter.print_summary(
+        symbol=symbol,
+        trades_df=trades_df,
+        values_df=values_df,
+        title=f"{strategy.name} 回测报告",
+        language="zh",
+    )
+
+    print("\n=== 交易记录预览 ===")
+    print(trades_df.head())
+    print("\n=== 账户净值预览 ===")
+    print(values_df.head())
+
+
+if __name__ == "__main__":
+    main()
