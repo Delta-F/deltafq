@@ -1,91 +1,64 @@
 """
-Compare different Bollinger Bands signal methods on a single symbol.
+Minimal example: generate signals from technical indicators.
 """
 
 import os
 import sys
-import warnings
-warnings.filterwarnings('ignore')
 
 import pandas as pd
 
-# Ensure project root on path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from deltafq.data.fetcher import DataFetcher
+from deltafq.data import DataFetcher
 from deltafq.indicators import TechnicalIndicators
 from deltafq.strategy import SignalGenerator
-from deltafq.charts import SignalChart
 
 
-def main():
-    symbol = '601398.SS'
-    start_date = '2025-09-01'
-    end_date = '2025-10-30'
-
-    fetcher = DataFetcher()
+def main() -> None:
+    fetcher = DataFetcher(source="yahoo")
     indicators = TechnicalIndicators()
-    generator = SignalGenerator()
-    signal_chart = SignalChart()
+    signals = SignalGenerator()
 
-    data = fetcher.fetch_data(symbol, start_date, end_date, clean=True)
-    bands = indicators.boll(data['Close'], period=5, std_dev=1)
+    data = fetcher.fetch_data(symbol="AAPL", start_date="2024-01-01", end_date="2024-03-31", clean=True)
 
-    # Generate signals for different methods
-    signals_touch = generator.boll_signals(price=data['Close'], bands=bands, method='touch')
-    signals_cross = generator.boll_signals(price=data['Close'], bands=bands, method='cross')
+    close = data["Close"]
+    high = data["High"]
+    low = data["Low"]
+    volume = data["Volume"]
 
-    # Print comparison summary
-    summary_data = {
-        'touch': {
-            'buy': int((signals_touch == 1).sum()),
-            'sell': int((signals_touch == -1).sum()),
-            'hold': int((signals_touch == 0).sum())
+    sma_fast = indicators.sma(close, period=10)
+    sma_slow = indicators.sma(close, period=20)
+    ema = indicators.ema(close, period=20)
+    rsi = indicators.rsi(close, period=14, method="rma")
+    kdj = indicators.kdj(high, low, close, n=9, m1=3, m2=3, method="sma")
+    boll = indicators.boll(close, period=20, std_dev=2, method="population")
+    obv = indicators.obv(close, volume)
+
+    signal_table = pd.DataFrame({
+        "sma": signals.sma_signals(sma_fast, sma_slow),
+        "ema": signals.ema_signals(close, ema),
+        "rsi": signals.rsi_signals(rsi),
+        "kdj": signals.kdj_signals(kdj),
+        "boll_touch": signals.boll_signals(close, boll, method="touch"),
+        "boll_cross": signals.boll_signals(close, boll, method="cross"),
+        "obv": signals.obv_signals(obv),
+    })
+
+    signal_table["combined"] = signals.combine_signals(
+        {
+            "sma": signal_table["sma"],
+            "ema": signal_table["ema"],
+            "rsi": signal_table["rsi"],
+            "kdj": signal_table["kdj"],
+            "boll": signal_table["boll_cross"],
         },
-        'cross': {
-            'buy': int((signals_cross == 1).sum()),
-            'sell': int((signals_cross == -1).sum()),
-            'hold': int((signals_cross == 0).sum())
-        }
-    }
-    summary_df = pd.DataFrame(summary_data).T
-    print('Boll signal counts by method:')
-    print(summary_df)
-    print()
-
-    # Prepare indicators dictionary
-    indicators_dict = {
-        'BB_upper': bands['upper'],
-        'BB_middle': bands['middle'],
-        'BB_lower': bands['lower']
-    }
-
-    # Plot signals for each method
-    signal_chart.plot_signals(
-        data=data,
-        signals=signals_touch,
-        indicators=indicators_dict,
-        title=f'{symbol} - Touch Method'
+        method="vote",
     )
 
-    signal_chart.plot_signals(
-        data=data,
-        signals=signals_cross,
-        indicators=indicators_dict,
-        title=f'{symbol} - Cross Method'
-    )
-    
-    # Keep windows open until user closes them or presses Enter
-    import matplotlib.pyplot as plt
-    print("\nCharts displayed. Close windows or press Enter to exit...")
-    try:
-        input()
-    except (EOFError, KeyboardInterrupt):
-        pass
-    plt.close('all')
+    print(signal_table)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

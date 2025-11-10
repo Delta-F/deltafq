@@ -50,6 +50,70 @@ class PerformanceReporter(BaseComponent):
         self.logger.info("Initializing performance reporter")
         return True
 
+    def print_summary(
+        self,
+        symbol: str,
+        trades_df: pd.DataFrame,
+        values_df: pd.DataFrame,
+        title: str | None = None,
+        language: str = "zh",
+    ) -> None:
+        _, metrics = self.compute(symbol, trades_df, values_df)
+        texts = _TEXTS_ZH if language == "zh" else _TEXTS_EN
+        _ensure_utf8(language)
+
+        print("\n" + "=" * 80)
+        header = title or texts["title_default"]
+        print(f"  {header}")
+        print("=" * 80 + "\n")
+
+        print(texts["date_info"])
+        print(f"  {texts['first_trade_date']}: {metrics.get('first_trade_date')}")
+        print(f"  {texts['last_trade_date']}: {metrics.get('last_trade_date')}")
+        print(f"  {texts['total_trading_days']}: {metrics.get('total_trading_days', 0)}")
+        print(f"  {texts['profitable_days']}: {metrics.get('profitable_days', 0)}")
+        print(f"  {texts['losing_days']}: {metrics.get('losing_days', 0)}\n")
+
+        print(texts["capital_info"])
+        print(f"  {texts['start_capital']}: {metrics.get('start_capital', 0.0):,.2f}")
+        end_capital = float(metrics.get("end_capital", 0.0))
+        start_capital = float(metrics.get("start_capital", 0.0))
+        print(f"  {texts['end_capital']}: {end_capital:,.2f}")
+        growth = end_capital - start_capital
+        total_return = metrics.get("total_return", 0.0)
+        print(f"  {texts['capital_growth']}: {growth:,.2f} ({total_return:.2%})\n")
+
+        print(texts["return_metrics"])
+        print(f"  {texts['total_return']}: {total_return:.2%}")
+        print(f"  {texts['annualized_return']}: {metrics.get('annualized_return', 0.0):.2%}")
+        print(f"  {texts['avg_daily_return']}: {metrics.get('avg_daily_return', 0.0):.2%}\n")
+
+        print(texts["risk_metrics"])
+        print(f"  {texts['max_drawdown']}: {metrics.get('max_drawdown', 0.0):.2%}")
+        print(f"  {texts['return_std']}: {metrics.get('return_std', 0.0):.2%}")
+        print(f"  {texts['volatility']}: {metrics.get('volatility', 0.0):.2%}\n")
+
+        print(texts["performance_metrics"])
+        print(f"  {texts['sharpe_ratio']}: {metrics.get('sharpe_ratio', 0.0):.2f}")
+        print(f"  {texts['return_drawdown_ratio']}: {metrics.get('return_drawdown_ratio', 0.0):.2f}")
+        print(f"  {texts['win_rate']}: {metrics.get('win_rate', 0.0):.2%}")
+        print(f"  {texts['profit_loss_ratio']}: {metrics.get('profit_loss_ratio', 0.0):.2f}")
+        print(f"  {texts['avg_win']}: {metrics.get('avg_win', 0.0):,.2f}")
+        print(f"  {texts['avg_loss']}: {metrics.get('avg_loss', 0.0):,.2f}\n")
+
+        print(texts["trading_stats"])
+        print(f"  {texts['total_pnl']}: {metrics.get('total_pnl', 0.0):,.2f}")
+        print(f"  {texts['total_commission']}: {metrics.get('total_commission', 0.0):,.2f}")
+        print(f"  {texts['total_turnover']}: {metrics.get('total_turnover', 0.0):,.2f}")
+        print(f"  {texts['total_trade_count']}: {metrics.get('total_trade_count', 0)}\n")
+
+        print(texts["daily_stats"])
+        print(f"  {texts['avg_daily_pnl']}: {metrics.get('avg_daily_pnl', 0.0):,.2f}")
+        print(f"  {texts['avg_daily_commission']}: {metrics.get('avg_daily_commission', 0.0):,.2f}")
+        print(f"  {texts['avg_daily_turnover']}: {metrics.get('avg_daily_turnover', 0.0):,.2f}")
+        print(f"  {texts['avg_daily_trade_count']}: {metrics.get('avg_daily_trade_count', 0.0):.2f}\n")
+        print("=" * 80 + "\n")
+
     def compute(
         self,
         symbol: str,
@@ -140,80 +204,6 @@ class PerformanceReporter(BaseComponent):
         }
 
         return values, metrics
-
-    def print_summary(
-        self,
-        symbol: str,
-        trades_df: pd.DataFrame,
-        values_df: pd.DataFrame,
-        title: str | None = None,
-        language: str = "zh",
-    ) -> None:
-        _, metrics = self.compute(symbol, trades_df, values_df)
-        texts = _TEXTS_ZH if language == "zh" else _TEXTS_EN
-        _ensure_utf8(language)
-
-        print("\n" + "=" * 80)
-        header = title or texts["title_default"]
-        print(f"  {header}")
-        print("=" * 80 + "\n")
-
-        print(texts["date_info"])
-        print(f"  {texts['first_trade_date']}: {metrics.get('first_trade_date')}")
-        print(f"  {texts['last_trade_date']}: {metrics.get('last_trade_date')}")
-        print(f"  {texts['total_trading_days']}: {metrics.get('total_trading_days', 0)}")
-        print(f"  {texts['profitable_days']}: {metrics.get('profitable_days', 0)}")
-        print(f"  {texts['losing_days']}: {metrics.get('losing_days', 0)}\n")
-
-        print(texts["capital_info"])
-        print(f"  {texts['start_capital']}: {metrics.get('start_capital', 0.0):,.2f}")
-        end_capital = float(metrics.get("end_capital", 0.0))
-        start_capital = float(metrics.get("start_capital", 0.0))
-        print(f"  {texts['end_capital']}: {end_capital:,.2f}")
-        growth = end_capital - start_capital
-        total_return = metrics.get("total_return", 0.0)
-        print(f"  {texts['capital_growth']}: {growth:,.2f} ({total_return:.2%})\n")
-
-        print(texts["return_metrics"])
-        print(f"  {texts['total_return']}: {total_return:.2%}")
-        print(f"  {texts['annualized_return']}: {metrics.get('annualized_return', 0.0):.2%}")
-        print(f"  {texts['avg_daily_return']}: {metrics.get('avg_daily_return', 0.0):.2%}\n")
-
-        print(texts["risk_metrics"])
-        print(f"  {texts['max_drawdown']}: {metrics.get('max_drawdown', 0.0):.2%}")
-        print(f"  {texts['return_std']}: {metrics.get('return_std', 0.0):.2%}")
-        print(f"  {texts['volatility']}: {metrics.get('volatility', 0.0):.2%}\n")
-
-        print(texts["performance_metrics"])
-        print(f"  {texts['sharpe_ratio']}: {metrics.get('sharpe_ratio', 0.0):.2f}")
-        print(f"  {texts['return_drawdown_ratio']}: {metrics.get('return_drawdown_ratio', 0.0):.2f}")
-        print(f"  {texts['win_rate']}: {metrics.get('win_rate', 0.0):.2%}")
-        print(f"  {texts['profit_loss_ratio']}: {metrics.get('profit_loss_ratio', 0.0):.2f}")
-        print(f"  {texts['avg_win']}: {metrics.get('avg_win', 0.0):,.2f}")
-        print(f"  {texts['avg_loss']}: {metrics.get('avg_loss', 0.0):,.2f}\n")
-
-        print(texts["trading_stats"])
-        print(f"  {texts['total_pnl']}: {metrics.get('total_pnl', 0.0):,.2f}")
-        print(f"  {texts['total_commission']}: {metrics.get('total_commission', 0.0):,.2f}")
-        print(f"  {texts['total_turnover']}: {metrics.get('total_turnover', 0.0):,.2f}")
-        print(f"  {texts['total_trade_count']}: {metrics.get('total_trade_count', 0)}\n")
-
-        print(texts["daily_stats"])
-        print(f"  {texts['avg_daily_pnl']}: {metrics.get('avg_daily_pnl', 0.0):,.2f}")
-        print(f"  {texts['avg_daily_commission']}: {metrics.get('avg_daily_commission', 0.0):,.2f}")
-        print(f"  {texts['avg_daily_turnover']}: {metrics.get('avg_daily_turnover', 0.0):,.2f}")
-        print(f"  {texts['avg_daily_trade_count']}: {metrics.get('avg_daily_trade_count', 0.0):.2f}\n")
-        print("=" * 80 + "\n")
-
-
-def _ensure_utf8(language: str) -> None:
-    if language == "zh":
-        encoding = getattr(sys.stdout, "encoding", "") or ""
-        if encoding.lower() != "utf-8":
-            try:
-                sys.stdout.reconfigure(encoding="utf-8")
-            except AttributeError:
-                pass
 
 
 def _calculate_trade_metrics(trades_df: pd.DataFrame) -> Dict[str, Any]:
@@ -347,4 +337,14 @@ _TEXTS_EN = {
 
 
 __all__ = ["PerformanceReporter"]
+
+
+def _ensure_utf8(language: str) -> None:
+    if language == "zh":
+        encoding = getattr(sys.stdout, "encoding", "") or ""
+        if encoding.lower() != "utf-8":
+            try:
+                sys.stdout.reconfigure(encoding="utf-8")
+            except AttributeError:
+                pass
 

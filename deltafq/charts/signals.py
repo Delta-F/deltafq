@@ -58,8 +58,8 @@ class SignalChart(BaseComponent):
                         low=frame["Low"],
                         close=frame["Close"],
                         name="Price",
-                        increasing_line_color="#22c55e",
-                        decreasing_line_color="#ef4444",
+                        increasing_line_color="#ef4444",
+                        decreasing_line_color="#22c55e",
                     ),
                     row=1,
                     col=1,
@@ -82,7 +82,7 @@ class SignalChart(BaseComponent):
                         y=frame.loc[buy_mask, "Close"],
                         mode="markers",
                         name="Buy",
-                        marker=dict(symbol="triangle-up", size=12, color="#22c55e"),
+                        marker=dict(symbol="triangle-up", size=12, color="#ef4444"),
                     ),
                     row=1,
                     col=1,
@@ -93,7 +93,7 @@ class SignalChart(BaseComponent):
                         y=frame.loc[sell_mask, "Close"],
                         mode="markers",
                         name="Sell",
-                        marker=dict(symbol="triangle-down", size=12, color="#ef4444"),
+                        marker=dict(symbol="triangle-down", size=12, color="#22c55e"),
                     ),
                     row=1,
                     col=1,
@@ -160,7 +160,7 @@ class SignalChart(BaseComponent):
         x = mdates.date2num(frame.index.to_pydatetime())
         for xi, row in zip(x, frame[["Open", "High", "Low", "Close"]].itertuples(index=False)):
             o, h, l, c = row
-            color = "#22c55e" if c >= o else "#ef4444"
+            color = "#ef4444" if c >= o else "#22c55e"
             ax.vlines(xi, l, h, color="#6b7280", linewidth=0.8)
             ax.add_patch(
                 plt.Rectangle(

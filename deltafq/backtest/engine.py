@@ -4,18 +4,13 @@ Backtesting engine for DeltaFQ.
 
 import pandas as pd
 from typing import Dict, Any, Optional, Tuple, List
-from datetime import datetime
 from ..core.base import BaseComponent
-from ..trader.execution import ExecutionEngine
+from ..trader.engine import ExecutionEngine
 from ..data.storage import DataStorage
 
 
 class BacktestEngine(BaseComponent):
-    """Backtesting engine for strategy testing with historical data.
-    
-    Uses ExecutionEngine for order execution and portfolio management.
-    Only handles signal processing and order parameter definition.
-    """
+    """Backtesting engine for DeltaFQ."""
     
     def __init__(self, initial_capital: float = 1000000, commission: float = 0.001, 
                  slippage: Optional[float] = None, storage: Optional[DataStorage] = None,
@@ -45,19 +40,18 @@ class BacktestEngine(BaseComponent):
     
     def run_backtest(self, symbol: str, signals: pd.Series, price_series: pd.Series,
                    save_csv: bool = False, strategy_name: Optional[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Execute trades based on precomputed signals.
-        
-        Only handles signal processing and order parameter definition.
-        All buy/sell calculations are delegated to ExecutionEngine.
-        
-        Example:
-            >>> engine = BacktestEngine(initial_capital=100000)
-            >>> trades_df, values_df = engine.run_backtest(
-            ...     symbol='AAPL',
-            ...     signals=signals,  # Series with 1/-1/0
-            ...     price_series=data['Close']
-            ... )
+        """Execute a historical replay for a single symbol.
+
+        Args:
+            symbol: Instrument identifier (e.g. ticker).
+            signals: Series aligned with `price_series`, containing {-1, 0, 1}.
+            price_series: Historical close prices used for fills.
+            save_csv: When True, persist trades and equity curve via `DataStorage`.
+            strategy_name: Optional strategy label for saved files.
+
+        Returns:
+            trades_df: Executed orders recorded by the execution engine.
+            values_df: Daily portfolio snapshot with cash, positions, and PnL.
         """
         try:
             # Reset execution engine for new backtest
@@ -91,7 +85,8 @@ class BacktestEngine(BaseComponent):
                             symbol=symbol,
                             quantity=max_qty,
                             order_type="market",
-                            price=price
+                            price=price,
+                            timestamp=date
                         )
                         
                 elif signal == -1:  # Sell signal
@@ -103,7 +98,8 @@ class BacktestEngine(BaseComponent):
                             symbol=symbol,
                             quantity=-current_qty,  # Negative for sell
                             order_type="market",
-                            price=price
+                            price=price,
+                            timestamp=date
                         )
                 
                 # Calculate daily portfolio metrics from ExecutionEngine

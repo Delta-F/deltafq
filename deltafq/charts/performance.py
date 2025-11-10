@@ -52,6 +52,10 @@ class PerformanceChart(BaseComponent):
             df["returns"] = df["total_value"].pct_change().fillna(0.0)
 
         has_price = "price" in df.columns
+        if not df.empty:
+            date_text = f"{df.index.min().date()} — {df.index.max().date()}"
+        else:
+            date_text = "no data"
 
         # Pre-compute series used by both matplotlib and plotly paths
         strategy_nv = df["total_value"] / df["total_value"].iloc[0]
@@ -134,7 +138,7 @@ class PerformanceChart(BaseComponent):
                     col=1,
                 )
                 fig.add_trace(
-                    go.Bar(x=df.index, y=returns_pct, name="每日盈亏", marker_color=np.where(returns_pct >= 0, "#06A77D", "#D00000")),
+                    go.Bar(x=df.index, y=returns_pct, name="每日盈亏", marker_color=np.where(returns_pct >= 0, "#ef4444", "#22c55e")),
                     row=4,
                     col=1,
                 )
@@ -179,7 +183,12 @@ class PerformanceChart(BaseComponent):
                 fig.update_yaxes(title_text="收益率 (%)", row=4, col=1)
                 fig.update_yaxes(title_text="频数", row=5, col=1)
 
-                fig.update_layout(title=title or "策略表现分析", template="plotly_white", showlegend=True)
+                base_title = title or "策略表现分析"
+                fig.update_layout(
+                    title=f"{base_title}<br><sup>{date_text}</sup>",
+                    template="plotly_white",
+                    showlegend=True,
+                )
 
                 if save_path:
                     html_path = save_path if str(save_path).lower().endswith(".html") else f"{save_path}.html"
@@ -192,7 +201,8 @@ class PerformanceChart(BaseComponent):
         # ------------------------------ Matplotlib branch ------------------------------
         n_panels = 5 if has_price else 4
         fig, axes = plt.subplots(n_panels, 1, figsize=(16, 14 if has_price else 12))
-        fig.suptitle(title or "策略表现分析", fontsize=16, y=0.995)
+        base_title = title or "策略表现分析"
+        fig.suptitle(f"{base_title} | {date_text}", fontsize=16, y=0.995)
 
         idx = 0
         if has_price and price_norm is not None:
@@ -267,7 +277,7 @@ class PerformanceChart(BaseComponent):
         ax.grid(True, alpha=0.3, linestyle="--")
 
     def _plot_daily_returns(self, ax: plt.Axes, returns_pct: pd.Series) -> None:
-        colors = ["#06A77D" if x > 0 else "#D00000" for x in returns_pct]
+        colors = ["#ef4444" if x >= 0 else "#22c55e" for x in returns_pct]
         ax.bar(returns_pct.index, returns_pct, color=colors, alpha=0.7, width=0.8)
         ax.axhline(y=0, color="black", linewidth=0.5)
 

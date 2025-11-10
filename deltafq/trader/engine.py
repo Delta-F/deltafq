@@ -59,7 +59,7 @@ class ExecutionEngine(BaseComponent):
         return True
     
     def execute_order(self, symbol: str, quantity: int, order_type: str = "limit", 
-                     price: Optional[float] = None) -> str:
+                     price: Optional[float] = None, timestamp: Optional[datetime] = None) -> str:
         """Execute an order. Default is limit order (price required)."""
         try:
             # Validate price for limit orders
@@ -90,15 +90,15 @@ class ExecutionEngine(BaseComponent):
                 
                 self.logger.info(f"Order executed through broker: {order_id} -> {broker_order_id}")
             else:
-                self._execute_paper_trade(order_id, price)
-                self.logger.info(f"Order executed in paper trading: {order_id}")
+                self._execute_paper_trade(order_id, price, timestamp)
+                self.logger.info(f"Order executed in paper trading: {order_id}, timestamp: {timestamp}")
             
             return order_id
             
         except Exception as e:
             raise TradingError(f"Failed to execute order: {str(e)}")
     
-    def _execute_paper_trade(self, order_id: str, execution_price: float):
+    def _execute_paper_trade(self, order_id: str, execution_price: float, timestamp: Optional[datetime] = None):
         """Execute paper trading with cash management."""
         order = self.order_manager.get_order(order_id)
         if not order:
@@ -106,7 +106,7 @@ class ExecutionEngine(BaseComponent):
         
         symbol = order['symbol']
         quantity = order['quantity']
-        timestamp = datetime.now()
+        timestamp = timestamp or datetime.now()
         
         if quantity > 0:  # Buy
             gross_cost = quantity * execution_price

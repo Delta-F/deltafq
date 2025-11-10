@@ -1,8 +1,12 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented here. The format follows Keep a Changelog and Semantic Versioning.
 
-The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
+## [0.4.0] - 2025-11-10
+### Highlights
+- Added quick-start examples for end-to-end backtests: `05_backtest_report.py`, `05_backtest_charts.py`, `06_baseStrategy_backtestEngine.py`.
+- Refined chart styling: signals now use red for buy/upswing and green for sell/downswing; performance charts show date ranges and align P&L colours with the new scheme.
+- Streamlined core modules to focus on essential APIs and clearer documentation.
 
 ## [0.3.1] - 2025-11-07
 ### Added

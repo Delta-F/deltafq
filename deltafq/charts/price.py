@@ -1,5 +1,4 @@
 """Minimal price chart helper (Matplotlib or Plotly)."""
-
 from typing import Dict, Optional, Union
 
 import matplotlib.pyplot as plt
@@ -18,7 +17,7 @@ class PriceChart(BaseComponent):
         self,
         data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
         price_column: Optional[str] = "Close",
-        normalize: Optional[bool] = False,
+        normalize: Optional[bool] = True,
         title: Optional[str] = None,
         use_plotly: Optional[bool] = False,
     ) -> None:
