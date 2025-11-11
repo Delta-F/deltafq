@@ -34,10 +34,6 @@ class SignalGenerator(BaseComponent):
         self._log_signal_counts("SMA crossover", signals)
         return signals
 
-    def ma_signals(self, fast_ma: pd.Series, slow_ma: pd.Series) -> pd.Series:
-        """Alias for backwards compatibility."""
-        return self.sma_signals(fast_ma, slow_ma)
-
     # --- EMA -----------------------------------------------------------------
     def ema_signals(self, price: pd.Series, ema: pd.Series) -> pd.Series:
         """Bullish when price sits above the EMA, bearish when it falls below."""
@@ -98,7 +94,7 @@ class SignalGenerator(BaseComponent):
             sell_condition = (prev_price >= prev_bands["upper"]) & (price <= bands["upper"])
             signals = np.where(buy_condition, 1, np.where(sell_condition, -1, 0))
 
-        elif method == "cross_current":
+        elif method == "cross_current": # same as jupyter notebook example
             prev_price = price.shift(1)
             buy_condition = (prev_price <= bands["lower"]) & (price >= bands["lower"])
             sell_condition = (prev_price >= bands["upper"]) & (price <= bands["upper"])

@@ -49,7 +49,7 @@ def main() -> None:
     price_chart.plot_prices(
         data=data_dict,
         title=f"{symbol} Price vs {benchmark} Price",
-        # use_plotly=True,
+        use_plotly=True,
     )
 
     signal_chart.plot_boll_signals(
@@ -57,14 +57,14 @@ def main() -> None:
         bands=boll,
         signals=signals,
         title="Bollinger Signals",
-        # use_plotly=True,
+        use_plotly=True,
     )
 
     performance_chart.plot_backtest_charts(
         values_df=values_df,
         benchmark_close=benchmark_data["Close"],
         title="Bollinger Bands Backtest Performance",
-        # use_plotly=True,
+        use_plotly=True,
     )
 
 

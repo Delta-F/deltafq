@@ -12,7 +12,7 @@ from ..core.exceptions import StrategyError
 class BaseStrategy(BaseComponent, ABC):
     """Minimal base class: fetch signals from `generate_signals` and return them."""
 
-    def __init__(self, name: str | None = None, **kwargs: Any) -> None:
+    def __init__(self, name: str = None, **kwargs: Any) -> None:
         super().__init__(name=name, **kwargs)
         self.signals: pd.DataFrame = pd.DataFrame()
 

@@ -13,7 +13,7 @@ from deltafq.data import DataFetcher
 
 
 def main() -> None:
-    fetcher = DataFetcher(source="yahoo")
+    fetcher = DataFetcher() # default source="yahoo"
     data = fetcher.fetch_data(symbol="AAPL", start_date="2024-01-01", end_date="2024-01-10")
     print(data.head())
 

@@ -20,7 +20,6 @@ def main() -> None:
     generator = SignalGenerator()
     engine = BacktestEngine(initial_capital=500_000, commission=0.001)
     reporter = PerformanceReporter()
-    performance_chart = PerformanceChart()
 
     symbol = "AAPL"
     start_date = "2024-01-01"

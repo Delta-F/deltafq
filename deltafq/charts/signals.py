@@ -41,7 +41,7 @@ class SignalChart(BaseComponent):
                 import plotly.graph_objects as go
                 from plotly.subplots import make_subplots
             except ImportError as exc:  # pragma: no cover
-                self.logger.warning("Plotly not available (%s); falling back to Matplotlib", exc)
+                self.logger.info("Plotly not available (%s); falling back to Matplotlib", exc)
             else:
                 fig = make_subplots(
                     rows=2,

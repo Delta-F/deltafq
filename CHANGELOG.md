@@ -2,52 +2,23 @@
 
 All notable changes to this project will be documented here. The format follows Keep a Changelog and Semantic Versioning.
 
-## [0.4.0] - 2025-11-10
-### Highlights
-- Added quick-start examples for end-to-end backtests: `05_backtest_report.py`, `05_backtest_charts.py`, `06_baseStrategy_backtestEngine.py`.
-- Refined chart styling: signals now use red for buy/upswing and green for sell/downswing; performance charts show date ranges and align P&L colours with the new scheme.
-- Streamlined core modules to focus on essential APIs and clearer documentation.
+## [0.4.1] - 2025-11-10
+- Quick-start backtest scripts (`05_backtest_report.py`, `05_backtest_charts.py`, `06_baseStrategy_backtestEngine.py`).
+- Unified chart styling with red buys / green sells and consistent P&L colouring.
+- Core modules trimmed to the public APIs with updated docs.
 
 ## [0.3.1] - 2025-11-07
-### Added
-- Example `06_base_strategy`: moving-average cross built on `BaseStrategy`, including end-to-end backtest.
-- Example `05_visualize_charts.py`: quick way to preview performance, price, and signal charts (Matplotlib & Plotly).
-- Example `01_history_data`: minimal script for pulling historical market data with `DataFetcher`.
-- Performance charts: Plotly export now available via `use_plotly` flag in `PerformanceChart.plot_backtest_charts`.
-
-### Changed
-- `PerformanceReporter` focuses on console summaries; `print_summary` computes metrics internally and no longer requires `initial_capital` or pre-built metrics tuples.
-- `PerformanceReporter.compute` returns `(values_df, metrics)` and drops the `PerformanceSummary` dataclass plus the `run` helper.
-- `metrics.py` trimmed to pure calculation helpers with no validation boilerplate; exports updated accordingly.
-- Chart modules (`charts/performance.py`, `charts/price.py`, `charts/signals.py`) simplified APIs, normalized benchmark overlays, refined colors, and added Plotly parity fixes.
-- `DataFetcher` got minor polish to align with revised examples/docs.
-- README (EN/中文) refreshed to showcase the new workflow and examples, including direct chart usage.
-
-### Removed
-- Legacy `deltafq/backtest/reporter.py` module in favour of the streamlined `PerformanceReporter`.
-
-### Fixed
-- Matplotlib distribution plot now keeps numeric axes; timeline formatting limited to relevant subplots.
-- Price comparison and net value panels normalize benchmark and strategy series consistently.
+- New examples covering base strategy execution, chart previews, and fast historical data pulls.
+- Performance charts gained optional Plotly export; chart modules now share simplified APIs and colour rules.
+- `PerformanceReporter` computes metrics internally; helper dataclasses removed. Docs and `DataFetcher` polished to match the flow.
+- Deprecated `deltafq/backtest/reporter.py`; normalised distribution plots and benchmark comparisons.
 
 ## [0.3.0] - 2025-11-06
-### Added
-- SignalChart: benchmark comparison subplot and timeline; improved app-like styling.
-- PerformanceChart: Plotly interactive charts with HTML export; optional `use_plotly` flag.
-- PerformanceChart: close price comparison subplot (now 5 panels when data provided).
-- Strategy signals: `boll_signals` new method `cross_current` aligning with current-band crossover logic.
-- Examples: simple Bollinger backtest and report script.
-- Documentation: refreshed `README.md` and `README_CN.md` with quick start and module overview.
-- Packaging: optional extras `viz` (plotly) and `talib` in `pyproject.toml`.
-- Version file `VERSION` for release tracking.
-
-### Changed
-- Backtest engine delegates execution to `ExecutionEngine` only; removed portfolio helpers from engine.
-- Metrics: modularized and trimmed to what `performance.py` uses.
-- Reporter: prints summary directly and supports zh/en output.
-
-### Removed
-- Seaborn from core dependencies (still can emulate style via Matplotlib theme).
+- Signal and performance charts received benchmark overlays, Plotly support, and richer panels.
+- Strategy signals added Bollinger `cross_current`; examples and READMEs refreshed for the new workflow.
+- Packaging extras (`viz`, `talib`) introduced alongside the `VERSION` tracker.
+- Backtest engine now delegates execution, metrics module slimmed, reporter prints summaries in zh/en.
+- Removed Seaborn from core dependencies.
 
 ---
 

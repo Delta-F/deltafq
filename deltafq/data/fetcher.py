@@ -30,7 +30,7 @@ class DataFetcher(BaseComponent):
         """Lazy initialization of cleaner."""
         if self.cleaner is None:
             self.cleaner = DataCleaner()
-            self.cleaner.initialize()
+            # self.cleaner.initialize()
     
     def fetch_data(self, symbol: str, start_date: str, end_date: str = None, clean: bool = False) -> pd.DataFrame:
         """Fetch stock data for given symbol."""

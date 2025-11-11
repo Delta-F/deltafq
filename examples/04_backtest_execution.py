@@ -17,7 +17,7 @@ def main() -> None:
     fetcher = DataFetcher()
     indicators = TechnicalIndicators()
     generator = SignalGenerator()
-    engine = BacktestEngine() # initial_capital=1000000, commission=0.001
+    engine = BacktestEngine(initial_capital=10000, commission=0.0005) # default initial_capital=1000000, commission=0.001
 
     symbol = "AAPL"
     start_date = "2024-01-01"

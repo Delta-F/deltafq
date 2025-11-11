@@ -226,7 +226,7 @@ def _calculate_trade_metrics(trades_df: pd.DataFrame) -> Dict[str, Any]:
     profit_loss_ratio = float(avg_win / abs(avg_loss)) if avg_loss else (float("inf") if avg_win > 0 else 0.0)
 
     return {
-        "total_trades": int(len(pnl_series)),
+        "total_trades": int(len(trades_df)),
         "total_pnl": total_pnl,
         "win_rate": float((pnl_series > 0).mean()),
         "winning_trades": int((pnl_series > 0).sum()),

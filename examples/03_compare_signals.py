@@ -17,7 +17,7 @@ from deltafq.strategy import SignalGenerator
 
 
 def main() -> None:
-    fetcher = DataFetcher(source="yahoo")
+    fetcher = DataFetcher()
     indicators = TechnicalIndicators()
     signals = SignalGenerator()
 
@@ -52,7 +52,9 @@ def main() -> None:
             "ema": signal_table["ema"],
             "rsi": signal_table["rsi"],
             "kdj": signal_table["kdj"],
-            "boll": signal_table["boll_cross"],
+            "boll_cross": signal_table["boll_cross"],
+            "boll_touch": signal_table["boll_touch"],
+            "obv": signal_table["obv"],
         },
         method="vote",
     )

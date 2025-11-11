@@ -60,7 +60,7 @@ class BacktestEngine(BaseComponent):
                 initial_capital=self.initial_capital,
                 commission=self.commission
             )
-            self.execution.initialize()
+            # self.execution.initialize()
             
             # Normalize input to DataFrame with required columns
             df_sig = pd.DataFrame({
@@ -84,7 +84,7 @@ class BacktestEngine(BaseComponent):
                         self.execution.execute_order(
                             symbol=symbol,
                             quantity=max_qty,
-                            order_type="market",
+                            order_type="limit",
                             price=price,
                             timestamp=date
                         )
@@ -97,7 +97,7 @@ class BacktestEngine(BaseComponent):
                         self.execution.execute_order(
                             symbol=symbol,
                             quantity=-current_qty,  # Negative for sell
-                            order_type="market",
+                            order_type="limit",
                             price=price,
                             timestamp=date
                         )
