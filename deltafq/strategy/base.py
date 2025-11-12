@@ -14,21 +14,22 @@ class BaseStrategy(BaseComponent, ABC):
 
     def __init__(self, name: str = None, **kwargs: Any) -> None:
         super().__init__(name=name, **kwargs)
-        self.signals: pd.DataFrame = pd.DataFrame()
+        self.signals: pd.Series = pd.Series(dtype=int)
 
     def initialize(self) -> bool:
-        self.logger.info("Initializing strategy: %s", self.name)
+        self.logger.info(f"Initializing strategy: {self.name}")
         return True
 
     @abstractmethod
-    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Return a `DataFrame` containing strategy signals."""
+    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
+        """Return a `Series` containing {-1, 0, 1} strategy signals."""
+        pass
 
     def run(self, data: pd.DataFrame) -> Dict[str, Any]:
-        self.logger.info("Running strategy: %s", self.name)
+        """Run the strategy and return the signals."""
+        self.logger.info(f"Running strategy: {self.name}")
         try:
             self.signals = self.generate_signals(data)
-            return {"strategy_name": self.name, "signals": self.signals}
-        except Exception as exc:  # pragma: no cover - thin wrapper
+            return {"strategy_name": self.name, "signals": self.signals.astype(int)}
+        except Exception as exc:
             raise StrategyError(f"Strategy execution failed: {exc}") from exc
-

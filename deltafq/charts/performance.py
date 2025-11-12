@@ -80,7 +80,7 @@ class PerformanceChart(BaseComponent):
                 import plotly.graph_objects as go
                 from plotly.subplots import make_subplots
             except ImportError as exc:  # pragma: no cover
-                self.logger.info("Plotly not available (%s); falling back to Matplotlib", exc)
+                self.logger.info(f"Plotly not available ({exc}); falling back to Matplotlib")
             else:
                 rows = 5
                 fig = make_subplots(
@@ -193,7 +193,7 @@ class PerformanceChart(BaseComponent):
                 if save_path:
                     html_path = save_path if str(save_path).lower().endswith(".html") else f"{save_path}.html"
                     fig.write_html(html_path, include_plotlyjs="cdn")
-                    self.logger.info("Chart saved to %s", html_path)
+                    self.logger.info(f"Chart saved to {html_path}")
                 else:
                     fig.show()
                 return
@@ -223,7 +223,7 @@ class PerformanceChart(BaseComponent):
 
         if save_path:
             fig.savefig(save_path, dpi=300, bbox_inches="tight")
-            self.logger.info("Chart saved to %s", save_path)
+            self.logger.info(f"Chart saved to {save_path}")
         else:
             plt.show()
 

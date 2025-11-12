@@ -1,27 +1,30 @@
-# Changelog
+# 更新日志
 
-All notable changes to this project will be documented here. The format follows Keep a Changelog and Semantic Versioning.
+项目遵循语义化版本，此处简要记录关键变化。
+
+## [0.4.2] - 2025-11-12
+- `BaseStrategy.generate_signals` 统一输出 `Series`，与信号生成器保持一致。
+- 优化策略执行与 Plotly 相关日志，兼顾兼容性和易读性。
 
 ## [0.4.1] - 2025-11-10
-- Quick-start backtest scripts (`05_backtest_report.py`, `05_backtest_charts.py`, `06_baseStrategy_backtestEngine.py`).
-- Unified chart styling with red buys / green sells and consistent P&L colouring.
-- Core modules trimmed to the public APIs with updated docs.
+- 新增快速回测示例：`05_backtest_report.py`、`05_backtest_charts.py`、`06_baseStrategy_backtestEngine.py`。
+- 图表配色统一为“红买绿卖”，盈亏显示风格一致。
+- 精简核心模块公开接口并同步完善文档。
 
 ## [0.3.1] - 2025-11-07
-- New examples covering base strategy execution, chart previews, and fast historical data pulls.
-- Performance charts gained optional Plotly export; chart modules now share simplified APIs and colour rules.
-- `PerformanceReporter` computes metrics internally; helper dataclasses removed. Docs and `DataFetcher` polished to match the flow.
-- Deprecated `deltafq/backtest/reporter.py`; normalised distribution plots and benchmark comparisons.
+- 增补示例，覆盖基础策略执行、图表预览与快速历史数据获取。
+- 性能图支持 Plotly 导出，图表模块 API 与配色规则统一。
+- `PerformanceReporter` 内建指标计算，移除旧数据类；优化 `DataFetcher` 描述与文档。
+- 弃用 `deltafq/backtest/reporter.py`，收益分布与基准对比更清晰。
 
 ## [0.3.0] - 2025-11-06
-- Signal and performance charts received benchmark overlays, Plotly support, and richer panels.
-- Strategy signals added Bollinger `cross_current`; examples and READMEs refreshed for the new workflow.
-- Packaging extras (`viz`, `talib`) introduced alongside the `VERSION` tracker.
-- Backtest engine now delegates execution, metrics module slimmed, reporter prints summaries in zh/en.
-- Removed Seaborn from core dependencies.
+- 信号与绩效图表新增基准叠加、Plotly 支持及更多展示面板。
+- 策略信号加入布林带 `cross_current`，示例与 README 同步调整。
+- 新增安装可选项（`viz`、`talib`）及版本文件 `VERSION`。
+- 回测引擎拆分执行模块，绩效统计更精简，报告支持中英文。
+- 移除 Seaborn 依赖。
 
 ---
 
-Previous versions prior to 0.3.0 were internal iterations.
-
+0.3.0 之前的版本属于内部迭代。***
 

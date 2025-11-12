@@ -1,4 +1,0 @@
-"""
-Strategy implementation examples.
-"""
-
