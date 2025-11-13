@@ -2,7 +2,7 @@
 Base classes for DeltaFQ components.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from .logger import Logger
 
 
@@ -14,8 +14,7 @@ class BaseComponent(ABC):
         self.name = name or self.__class__.__name__
         self.logger = Logger(self.name)
     
-    @abstractmethod
     def initialize(self) -> bool:
-        """Initialize the component."""
-        pass
+        """Initialize the component if needed such as connection to external services."""
+        return True
 

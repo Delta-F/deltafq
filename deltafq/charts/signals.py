@@ -11,10 +11,10 @@ from ..core.base import BaseComponent
 
 
 class SignalChart(BaseComponent):
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize the signal chart."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing signal chart")
-        return True
 
     def plot_boll_signals(
         self,

@@ -10,10 +10,10 @@ from ..core.base import BaseComponent
 class TalibIndicators(BaseComponent):
     """Technical indicators using TA-Lib library."""
     
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize technical indicators."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing TA-Lib technical indicators")
-        return True
     
     def sma(self, data: pd.Series, period: int) -> pd.Series:
         """Calculate Simple Moving Average (SMA) using TA-Lib."""

@@ -18,9 +18,10 @@ except ImportError:  # pragma: no cover
 class PerformanceChart(BaseComponent):
     """Visualize backtest performance with stacked panels."""
 
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
+        """Initialize performance chart."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing performance chart")
-        return True
 
     def plot_backtest_charts(
         self,

@@ -14,11 +14,7 @@ class PositionManager(BaseComponent):
         """Initialize position manager."""
         super().__init__(**kwargs)
         self.positions = {}
-    
-    def initialize(self) -> bool:
-        """Initialize position manager."""
         self.logger.info("Initializing position manager")
-        return True
     
     def add_position(self, symbol: str, quantity: int, price: Optional[float] = None) -> bool:
         """Add to existing position or create new position."""

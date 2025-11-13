@@ -10,10 +10,10 @@ from ..core.base import BaseComponent
 class DataCleaner(BaseComponent):
     """Data cleaning utilities."""
     
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize the data cleaner."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing data cleaner")
-        return True
     
     def dropna(self, data: pd.DataFrame) -> pd.DataFrame:
         """Remove rows with NaN values."""

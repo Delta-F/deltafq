@@ -22,11 +22,7 @@ class LiveRiskControl(BaseComponent):
         self.peak_equity = 0.0
         self.risk_limits = {}
         self.alert_callbacks = []
-    
-    def initialize(self) -> bool:
-        """Initialize risk control."""
         self.logger.info("Initializing live risk control")
-        return True
     
     def add_alert_callback(self, callback) -> bool:
         """Add alert callback function."""

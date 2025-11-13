@@ -18,11 +18,7 @@ class ConnectionManager(BaseComponent):
         self.connection_configs = {}
         self.health_check_interval = 60  # seconds
         self.last_health_check = {}
-    
-    def initialize(self) -> bool:
-        """Initialize connection manager."""
         self.logger.info("Initializing connection manager")
-        return True
     
     def add_connection(self, name: str, connection_type: str, config: Dict[str, Any]) -> bool:
         """Add a connection configuration."""

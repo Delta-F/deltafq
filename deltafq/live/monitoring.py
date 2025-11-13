@@ -18,11 +18,7 @@ class TradingMonitor(BaseComponent):
         self.monitoring_rules = {}
         self.alert_callbacks = []
         self.monitoring_active = False
-    
-    def initialize(self) -> bool:
-        """Initialize trading monitor."""
         self.logger.info("Initializing trading monitor")
-        return True
     
     def add_monitoring_rule(self, rule_name: str, rule_func: Callable, 
                            threshold: float = None, **kwargs) -> bool:

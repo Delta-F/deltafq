@@ -46,9 +46,10 @@ _EMPTY_TRADING_METRICS = {
 class PerformanceReporter(BaseComponent):
     """Compute backtest metrics and print summary."""
 
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
+        """Initialize performance reporter."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing performance reporter")
-        return True
 
     def print_summary(
         self,
@@ -171,6 +172,48 @@ class PerformanceReporter(BaseComponent):
 
         trade_metrics = _calculate_trade_metrics(trades)
         trading_metrics = _calculate_trading_metrics(trades, total_days)
+        
+        # 检查是否有未平仓持仓，计算浮动盈亏
+        realized_pnl = trade_metrics.get("total_pnl", 0.0)
+        unrealized_pnl = 0.0
+        
+        if not values_df.empty and not trades.empty and 'type' in trades.columns and 'cost' in trades.columns:
+            last_row = values_df.iloc[-1]
+            final_position = last_row.get('position', 0)
+            final_position_value = last_row.get('position_value', 0.0)
+            
+            if final_position > 0:
+                # 计算未平仓持仓的浮动盈亏
+                buy_trades = trades[trades['type'] == 'buy'].copy()
+                sell_trades = trades[trades['type'] == 'sell'].copy()
+                
+                if not buy_trades.empty and 'quantity' in buy_trades.columns:
+                    # 计算总买入数量和总买入成本
+                    total_bought_qty = buy_trades['quantity'].sum()
+                    total_buy_cost = buy_trades['cost'].sum()
+                    
+                    # 计算总卖出数量
+                    total_sold_qty = sell_trades['quantity'].sum() if not sell_trades.empty and 'quantity' in sell_trades.columns else 0
+                    
+                    # 未平仓数量应该等于 final_position
+                    open_qty = total_bought_qty - total_sold_qty
+                    
+                    if open_qty > 0 and total_bought_qty > 0:
+                        # 计算未平仓持仓的平均成本（加权平均）
+                        # 如果部分卖出，需要按比例计算未平仓部分的成本
+                        if total_sold_qty > 0:
+                            # 已卖出部分按平均成本计算
+                            avg_cost_per_share = total_buy_cost / total_bought_qty
+                            sold_cost = total_sold_qty * avg_cost_per_share
+                            open_position_cost = total_buy_cost - sold_cost
+                        else:
+                            # 全部未平仓
+                            open_position_cost = total_buy_cost
+                        
+                        # 浮动盈亏 = 当前持仓价值 - 持仓成本
+                        unrealized_pnl = final_position_value - open_position_cost
+        
+        total_pnl = realized_pnl + unrealized_pnl
 
         metrics: Dict[str, Any] = {
             "symbol": symbol,
@@ -189,7 +232,7 @@ class PerformanceReporter(BaseComponent):
             "volatility": volatility,
             "sharpe_ratio": sharpe_ratio,
             "return_drawdown_ratio": return_drawdown_ratio,
-            "total_pnl": trade_metrics.get("total_pnl", 0.0),
+            "total_pnl": total_pnl,
             "avg_win": trade_metrics.get("avg_win", 0.0),
             "avg_loss": trade_metrics.get("avg_loss", 0.0),
             "total_commission": trading_metrics.get("total_commission", 0.0),

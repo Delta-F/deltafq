@@ -1,6 +1,6 @@
 # DeltaFQ
 
-![Version](https://img.shields.io/badge/version-0.4.2-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.4.3-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)

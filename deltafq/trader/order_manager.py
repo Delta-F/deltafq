@@ -16,11 +16,7 @@ class OrderManager(BaseComponent):
         super().__init__(**kwargs)
         self.orders = {}
         self.order_counter = 0
-    
-    def initialize(self) -> bool:
-        """Initialize order manager."""
         self.logger.info("Initializing order manager")
-        return True
     
     def create_order(self, symbol: str, quantity: int, order_type: str = "limit", 
                     price: Optional[float] = None, stop_price: Optional[float] = None) -> str:

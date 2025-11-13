@@ -9,10 +9,10 @@ from ..core.base import BaseComponent
 class SignalGenerator(BaseComponent):
     """Generate trading signals from precomputed indicators and combine them."""
     
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize signal generator."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing signal generator")
-        return True
 
     def _log_signal_counts(self, label: str, series: pd.Series) -> None:
         """Log the number of buy, sell, and flat signals."""

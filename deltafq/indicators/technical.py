@@ -10,10 +10,10 @@ from ..core.base import BaseComponent
 class TechnicalIndicators(BaseComponent):
     """Basic technical indicators."""
     
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize technical indicators."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing technical indicators")
-        return True
     
     def sma(self, data: pd.Series, period: int) -> pd.Series:
         """Calculate Simple Moving Average (SMA)."""

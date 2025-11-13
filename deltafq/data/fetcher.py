@@ -20,11 +20,7 @@ class DataFetcher(BaseComponent):
         super().__init__(**kwargs)
         self.source = source
         self.cleaner = None
-    
-    def initialize(self) -> bool:
-        """Initialize the data fetcher."""
         self.logger.info(f"Initializing data fetcher with source: {self.source}")
-        return True
     
     def _ensure_cleaner(self):
         """Lazy initialization of cleaner."""

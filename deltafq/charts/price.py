@@ -8,10 +8,10 @@ from ..core.base import BaseComponent
 
 
 class PriceChart(BaseComponent):
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
         """Initialize the price chart."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing price chart")
-        return True
 
     def plot_prices(
         self,

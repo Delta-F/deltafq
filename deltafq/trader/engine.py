@@ -88,10 +88,10 @@ class ExecutionEngine(BaseComponent):
                 if order:
                     order['broker_order_id'] = broker_order_id
                 
-                self.logger.info(f"Order executed through broker: {order_id} -> {broker_order_id}")
+                self.logger.info(f"Order executed - broker: {order_id} -> {broker_order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
             else:
                 self._execute_paper_trade(order_id, price, timestamp)
-                self.logger.info(f"Order executed in paper trading: {order_id}, timestamp: {timestamp}")
+                self.logger.info(f"Order executed - paper trading: {order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
             
             return order_id
             

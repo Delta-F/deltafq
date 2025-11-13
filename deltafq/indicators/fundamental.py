@@ -9,9 +9,10 @@ from ..core.base import BaseComponent
 class FundamentalIndicators(BaseComponent):
     """Basic fundamental indicators computed from preloaded fundamentals."""
 
-    def initialize(self) -> bool:
+    def __init__(self, **kwargs):
+        """Initialize fundamental indicators."""
+        super().__init__(**kwargs)
         self.logger.info("Initializing fundamental indicators")
-        return True
 
     def pe(self, price: pd.Series, eps_ttm: pd.Series) -> pd.Series:
         eps = eps_ttm.reindex(price.index).ffill()

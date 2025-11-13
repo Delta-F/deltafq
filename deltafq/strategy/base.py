@@ -15,10 +15,7 @@ class BaseStrategy(BaseComponent, ABC):
     def __init__(self, name: str = None, **kwargs: Any) -> None:
         super().__init__(name=name, **kwargs)
         self.signals: pd.Series = pd.Series(dtype=int)
-
-    def initialize(self) -> bool:
         self.logger.info(f"Initializing strategy: {self.name}")
-        return True
 
     @abstractmethod
     def generate_signals(self, data: pd.DataFrame) -> pd.Series:

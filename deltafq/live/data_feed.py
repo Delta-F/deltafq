@@ -19,11 +19,7 @@ class LiveDataFeed(BaseComponent):
         self.data_callbacks = []
         self.is_running = False
         self.last_prices = {}
-    
-    def initialize(self) -> bool:
-        """Initialize live data feed."""
         self.logger.info("Initializing live data feed")
-        return True
     
     def subscribe(self, symbols: List[str], callback: Optional[Callable] = None) -> bool:
         """Subscribe to live data for given symbols."""

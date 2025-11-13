@@ -34,6 +34,7 @@ class DataStorage(BaseComponent):
             base_path = project_root / "data_cache"
         
         self.base_path = Path(base_path)
+        self.logger.info(f"Initializing data storage at: {self.base_path}")
         self._init_directories()
     
     def _get_project_root(self) -> Path:
@@ -58,10 +59,6 @@ class DataStorage(BaseComponent):
                         self.indicators_dir, self.misc_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
     
-    def initialize(self) -> bool:
-        """Initialize the data storage."""
-        self.logger.info(f"Initializing data storage at: {self.base_path}")
-        return True
     
     # ============================================================================
     # Price Data Storage
