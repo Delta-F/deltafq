@@ -1,16 +1,16 @@
 # DeltaFQ
 
-Modern, modular Python toolkit for quantitative research, backtesting, paper/live trading, and reporting.
+![Version](https://img.shields.io/badge/version-0.5.0-7C3AED.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
+![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
+![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-[中文文档](README.md)
+> Modern Python quantitative finance framework focused on strategy research, backtesting execution, and performance visualization.
 
-## Key Features
+**Language / 语言**: [中文](README.md) | [English](README_EN.md)
 
-- **Composable pipeline**: `data` → `indicators` → `strategy` → `backtest` → `charts`
-- **Execution layer**: `ExecutionEngine` with a pluggable `Broker` abstraction for paper or live trading
-- **Indicators & signals**: `TechnicalIndicators` and `SignalGenerator` cover SMA, EMA, RSI, KDJ, Bollinger Bands, OBV, and more
-- **Strategy baseline**: `BaseStrategy` enforces Series-based signals for straightforward backtests
-- **Reporting tools**: `PerformanceReporter` prints bilingual summaries; `PerformanceChart` renders Matplotlib or optional Plotly dashboards
+---
 
 ## Installation
 
@@ -18,7 +18,53 @@ Modern, modular Python toolkit for quantitative research, backtesting, paper/liv
 pip install deltafq
 ```
 
-## Quick Start (Bollinger example)
+- Requires Python ≥ 3.9.  
+- Optional components like Plotly and TA-Lib can be installed via `pip install deltafq[viz]` and `pip install deltafq[talib]`.
+
+---
+
+## Overview
+
+- Lightweight, modular quantitative research infrastructure covering the full pipeline: **data → indicators → strategy → backtest → visualization**.
+- Built-in consistent signal standard (`Series` type) for strategy reuse and component decoupling.
+- Suitable for desktop research workflows and script automation, supporting rapid validation and continuous integration.
+
+---
+
+## Core Capabilities
+
+- **Data Access**: Unified data fetching, cleaning, and validation processes.
+- **Indicator Library**: `TechnicalIndicators`/`SignalGenerator` provide mainstream indicators and various combination methods.
+- **Strategy Layer**: `BaseStrategy` abstracts strategy lifecycle for easy extension and backtest reuse.
+- **Backtest Execution**: `BacktestEngine` integrates underlying execution, position management, and performance metrics.
+- **Performance Visualization**: `PerformanceReporter` (bilingual) and `PerformanceChart` (Matplotlib / Plotly).
+
+---
+
+## Module Architecture
+
+```
+deltafq/
+├── data        # Data acquisition, cleaning, storage interfaces
+├── indicators  # Technical indicators and factor calculations
+├── strategy    # Signal generators and strategy base classes
+├── backtest    # Backtest execution, performance metrics, reporting
+├── charts      # Signal/performance chart components
+└── trader      # Trading execution and risk control (ongoing expansion)
+```
+
+### API Interfaces
+
+- **data**: `DataFetcher` (fetch Yahoo Finance data using yfinance), `DataCleaner`, `DataStorage`
+- **indicators**: `TechnicalIndicators` (SMA/EMA/RSI/KDJ/BOLL/OBV/MACD, etc.), `TalibIndicators` (optional, requires TA-Lib), `FundamentalIndicators`
+- **strategy**: `BaseStrategy` (strategy base class), `SignalGenerator` (signal generation and combination)
+- **backtest**: `BacktestEngine` (backtest engine), `PerformanceReporter` (performance reports, bilingual support)
+- **charts**: `PerformanceChart` (visualization using Matplotlib/Plotly), `PriceChart`, `SignalChart`
+- **trader**: `ExecutionEngine` (trading execution engine), `OrderManager`, `PositionManager`, `Broker` (broker API not yet integrated)
+
+---
+
+## Quick Start (BOLL Strategy)
 
 ```python
 import deltafq as dfq
@@ -37,37 +83,33 @@ signal_series = signals.boll_signals(price=data["Close"], bands=bands, method="c
 
 trades_df, values_df = engine.run_backtest(symbol, signal_series, data["Close"], strategy_name="BOLL")
 
-reporter.print_summary(
-    symbol=symbol,
-    trades_df=trades_df,
-    values_df=values_df,
-    title=f"{symbol} BOLL Strategy",
-    language="en",
-)
-
-chart.plot_backtest_charts(
-    values_df=values_df,
-    benchmark_close=data["Close"],
-    title=f"{symbol} BOLL Strategy",
-    use_plotly=False,
-)
+reporter.print_summary(symbol, trades_df, values_df, title=f"{symbol} BOLL Strategy", language="en")
+chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL Strategy")
 ```
 
-## Project Structure
+---
 
-- `deltafq/data`: acquisition, cleaning, validation
-- `deltafq/indicators`: classic technical indicators
-- `deltafq/strategy`: reusable signal helpers and `BaseStrategy`
-- `deltafq/backtest`: execution engine, metrics, textual reporting
-- `deltafq/charts`: signal/performance visualisations (Matplotlib + optional Plotly)
+## Examples & Tools
 
-Explore the `examples/` directory for end-to-end scripts that mirror the full workflow.
+- `01_fetch_yahoo_data.py`: Fetch historical data from Yahoo Finance using yfinance
+- `02_compare_indicators.py`: Technical indicator calculation and comparison
+- `03_compare_signals.py`: Multi-indicator signal generation and combination
+- `04_backtest_execution.py`: Single-strategy backtest execution workflow
+- `05_backtest_report.py / 05_backtest_charts.py`: Performance reports and chart visualization
+- `06_base_strategy_demo.py`: Moving average crossover strategy example based on `BaseStrategy`
+- `07_backtest_engine_tpl.py`: `BacktestEngine` template usage example
+- `08_deltafq_template.ipynb`: Complete strategy template example (BOLL strategy, two implementation methods)
+- `09_multi_factor_strategy.ipynb`: Multi-factor strategy example (SMA/EMA/RSI/KDJ/BOLL/OBV combination)
 
-## Contributing
+---
 
-Issues and pull requests are welcome—help us improve the library!
+## Community & Contributing
+
+- Welcome to provide feedback and submit improvements via Issues / PRs.
+- The project follows a clean code style; it's recommended to run basic lint/tests before submitting.
+
+---
 
 ## License
 
-Released under the MIT License. See [LICENSE](LICENSE) for details.
-
+MIT License. See [LICENSE](LICENSE) for details.

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import datetime
 from ..core.base import BaseComponent
+from ..core.config import Config
 
 
 class DataStorage(BaseComponent):
@@ -20,43 +21,31 @@ class DataStorage(BaseComponent):
         │   └── {symbol}/
         ├── backtest/       # Backtest results
         │   └── {symbol}/
-        ├── indicators/     # Technical indicators
-        └── misc/          # Other data
+        └── indicators/     # Technical indicators
     """
     
     def __init__(self, base_path: str = None, **kwargs):
         """Initialize data storage."""
         super().__init__(**kwargs)
         
-        # Auto-detect project root if base_path not provided
+        # Use Config to get cache directory if base_path not provided
         if base_path is None:
-            project_root = self._get_project_root()
-            base_path = project_root / "data_cache"
+            config = Config()
+            base_path = config.get_cache_dir()
         
         self.base_path = Path(base_path)
         self.logger.info(f"Initializing data storage at: {self.base_path}")
         self._init_directories()
-    
-    def _get_project_root(self) -> Path:
-        """Get project root directory by finding setup.py or pyproject.toml."""
-        current = Path(__file__).resolve()
-        # Go up from deltafq/data/storage.py to project root
-        for parent in current.parents:
-            if (parent / "setup.py").exists() or (parent / "pyproject.toml").exists():
-                return parent
-        # Fallback to current working directory
-        return Path.cwd()
     
     def _init_directories(self):
         """Initialize directory structure."""
         self.price_dir = self.base_path / "price"
         self.backtest_dir = self.base_path / "backtest"
         self.indicators_dir = self.base_path / "indicators"
-        self.misc_dir = self.base_path / "misc"
         
         # Create directories
         for dir_path in [self.price_dir, self.backtest_dir, 
-                        self.indicators_dir, self.misc_dir]:
+                        self.indicators_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
     
     
@@ -167,7 +156,7 @@ class DataStorage(BaseComponent):
     # ============================================================================
     
     def save_data(self, data: pd.DataFrame, filename: str, 
-                 category: str = "misc", subdir: Optional[str] = None) -> Path:
+                 category: str = "indicators", subdir: Optional[str] = None) -> Path:
         """Save data to storage with category."""
         if category == "price":
             target_dir = self.price_dir
@@ -176,7 +165,7 @@ class DataStorage(BaseComponent):
         elif category == "indicators":
             target_dir = self.indicators_dir
         else:
-            target_dir = self.misc_dir
+            raise ValueError(f"Invalid category: {category}. Must be 'price', 'backtest', or 'indicators'")
         
         if subdir:
             target_dir = target_dir / subdir
@@ -187,7 +176,7 @@ class DataStorage(BaseComponent):
         self.logger.info(f"Saved data to: {filepath}")
         return filepath
     
-    def load_data(self, filename: str, category: str = "misc", 
+    def load_data(self, filename: str, category: str = "indicators", 
                  subdir: Optional[str] = None) -> Optional[pd.DataFrame]:
         """Load data from storage."""
         if category == "price":
@@ -197,7 +186,7 @@ class DataStorage(BaseComponent):
         elif category == "indicators":
             target_dir = self.indicators_dir
         else:
-            target_dir = self.misc_dir
+            raise ValueError(f"Invalid category: {category}. Must be 'price', 'backtest', or 'indicators'")
         
         if subdir:
             target_dir = target_dir / subdir
@@ -224,8 +213,6 @@ class DataStorage(BaseComponent):
             target_dir = self.backtest_dir
         elif category == "indicators":
             target_dir = self.indicators_dir
-        elif category == "misc":
-            target_dir = self.misc_dir
         else:
             target_dir = self.base_path
         
@@ -248,7 +235,6 @@ class DataStorage(BaseComponent):
             'price_files': len(list(self.price_dir.rglob('*.csv'))),
             'backtest_files': len(list(self.backtest_dir.rglob('*.csv'))),
             'indicators_files': len(list(self.indicators_dir.rglob('*.csv'))),
-            'misc_files': len(list(self.misc_dir.rglob('*.csv'))),
             'total_size_mb': self._calculate_size()
         }
     

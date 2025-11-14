@@ -2,11 +2,16 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
-## [0.4.3] - 2025-01-XX
+## [0.5.0] - 2025-11-14
+- 删除 /test, core/Exception.py 等相关配置和依赖（用户通过脚本实现测试）
+- 新增多因子策略示例：`09_multi_factor_strategy.ipynb`
+- 新增策略模板示例： `08_deltafq_template.ipynb`
+
+## [0.4.3] - 2025-11-13
+- 重构 `BacktestEngine`：提供策略全流程快速调用方法，实现开箱即用
+- 修复未平仓持仓计算：修复回测结束时如果最后一笔是买入而非卖出平仓，未平仓持仓的浮动盈亏未计入 `total_pnl` 的问题
 - 重构 `BaseComponent`：将 `initialize()` 方法从抽象方法改为可选方法，提供默认实现
 - 优化组件初始化：删除所有仅记录日志的 `initialize()` 方法，将日志输出移到 `__init__` 中
-- 重构 `BacktestEngine`：将初始化逻辑从 `initialize()` 移到 `__init__`，支持在创建时传入参数
-- 修复未平仓持仓计算：修复回测结束时如果最后一笔是买入而非卖出平仓，未平仓持仓的浮动盈亏未计入 `total_pnl` 的问题
 
 ## [0.4.2] - 2025-11-12
 - `BaseStrategy.generate_signals` 统一输出 `Series`，与信号生成器保持一致。

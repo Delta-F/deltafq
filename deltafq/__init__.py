@@ -5,7 +5,16 @@ This library provides tools for strategy development, backtesting,
 paper trading, and live trading.
 """
 
-__version__ = "0.4.3"
+import os
+from pathlib import Path
+
+# Read version from VERSION file
+_version_file = Path(__file__).parent.parent / "VERSION"
+if _version_file.exists():
+    __version__ = _version_file.read_text().strip()
+else:
+    __version__ = "0.5.0"
+
 __author__ = "DeltaF"
 
 # Import core modules

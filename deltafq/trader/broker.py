@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from ..core.base import BaseComponent
-from ..core.exceptions import TradingError
 
 
 class Broker(BaseComponent, ABC):

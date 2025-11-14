@@ -6,7 +6,6 @@ import pandas as pd
 from typing import Dict, List, Callable, Optional, Any
 from datetime import datetime
 from ..core.base import BaseComponent
-from ..core.exceptions import TradingError
 
 
 class LiveDataFeed(BaseComponent):
@@ -36,7 +35,7 @@ class LiveDataFeed(BaseComponent):
             return True
             
         except Exception as e:
-            raise TradingError(f"Failed to subscribe to symbols: {str(e)}")
+            raise RuntimeError(f"Failed to subscribe to symbols: {str(e)}") from e
     
     def unsubscribe(self, symbols: List[str]) -> bool:
         """Unsubscribe from live data."""
@@ -71,7 +70,7 @@ class LiveDataFeed(BaseComponent):
             
         except Exception as e:
             self.is_running = False
-            raise TradingError(f"Failed to start data feed: {str(e)}")
+            raise RuntimeError(f"Failed to start data feed: {str(e)}") from e
     
     def stop_feed(self) -> bool:
         """Stop the live data feed."""

@@ -5,7 +5,6 @@ Real-time risk control for live trading.
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from ..core.base import BaseComponent
-from ..core.exceptions import TradingError
 
 
 class LiveRiskControl(BaseComponent):

@@ -8,19 +8,18 @@ description = "A comprehensive Python quantitative finance library"
 authors = [
     {name = "DeltaF", email = "leek_li@outlook.com"}
 ]
-readme = "README.md"
+readme = "README_EN.md"
 license = {text = "MIT"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Office/Business :: Financial :: Investment",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
@@ -48,8 +47,6 @@ talib = [
     "TA-Lib>=0.4.24",
 ]
 dev = [
-    "pytest>=6.2.0",
-    "pytest-cov>=2.12.0",
     "black>=21.0.0",
     "flake8>=3.9.0",
     "sphinx>=4.0.0",
@@ -60,16 +57,13 @@ Homepage = "https://github.com/Delta-F/deltafq"
 Repository = "https://github.com/Delta-F/deltafq"
 Issues = "https://github.com/Delta-F/deltafq/issues"
 
-[project.scripts]
-deltafq = "deltafq.cli:main"
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["deltafq*"]
 
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -85,29 +79,3 @@ extend-exclude = '''
 )/
 '''
 
-[tool.pytest.ini_options]
-testpaths = ["test"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "--cov=deltafq --cov-report=html --cov-report=term-missing"
-
-[tool.coverage.run]
-source = ["deltafq"]
-omit = [
-    "*/test*",
-    "*/tests/*",
-    "*/examples/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-]

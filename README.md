@@ -1,14 +1,25 @@
 # DeltaFQ
 
-![Version](https://img.shields.io/badge/version-0.4.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.5.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
-![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-2563EB.svg)
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
 > 现代化 Python 量化交易框架，聚焦策略研究、回测执行与业绩展示。
 
-[English README](README_EN.md)
+**Language / 语言**: [中文](README.md) | [English](README_EN.md)
+
+---
+
+## 安装
+
+```bash
+pip install deltafq
+```
+
+- 依赖 Python ≥ 3.9。  
+- Plotly、TA-Lib 等可选组件可通过 `pip install deltafq[viz]`、`pip install deltafq[talib]` 安装。
 
 ---
 
@@ -42,18 +53,14 @@ deltafq/
 └── trader      # 交易执行与风控（持续扩展）
 ```
 
-示例脚本位于 `examples/` 目录，涵盖信号对比、回测执行、报告生成等场景。
+### API 接口
 
----
-
-## 安装
-
-```bash
-pip install deltafq
-```
-
-- 依赖 Python ≥ 3.8。  
-- Plotly、TA-Lib 等可选组件可通过 `pip install deltafq[viz]`、`pip install deltafq[talib]` 安装。
+- **data**: `DataFetcher`（使用 yfinance 获取 Yahoo Finance 数据）、`DataCleaner`、`DataStorage`
+- **indicators**: `TechnicalIndicators`（SMA/EMA/RSI/KDJ/BOLL/OBV/MACD等）、`TalibIndicators`（可选，需安装TA-Lib）、`FundamentalIndicators`
+- **strategy**: `BaseStrategy`（策略基类）、`SignalGenerator`（信号生成与组合）
+- **backtest**: `BacktestEngine`（回测引擎）、`PerformanceReporter`（绩效报告，支持中英文）
+- **charts**: `PerformanceChart`（使用 Matplotlib/Plotly 实现可视化）、`PriceChart`、`SignalChart`
+- **trader**: `ExecutionEngine`（交易执行引擎）、`OrderManager`、`PositionManager`、`Broker`（暂未接入券商API接口）
 
 ---
 
@@ -84,18 +91,21 @@ chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], t
 
 ## 示例与工具
 
-- `03_compare_signals.py`：常见指标信号对比。
-- `04_backtest_execution.py`：单策略回测全流程。
-- `05_backtest_report.py / 05_backtest_charts.py`：绩效报表与图表化展示。
-- `06_base_strategy_demo.py`：基于 `BaseStrategy` 实现的均线交叉样例。
+- `01_fetch_yahoo_data.py`：使用 yfinance 获取 Yahoo Finance 历史数据
+- `02_compare_indicators.py`：技术指标计算与对比
+- `03_compare_signals.py`：多指标信号生成与组合
+- `04_backtest_execution.py`：单策略回测执行流程
+- `05_backtest_report.py / 05_backtest_charts.py`：绩效报表与图表可视化
+- `06_base_strategy_demo.py`：基于 `BaseStrategy` 的均线交叉策略示例
+- `07_backtest_engine_tpl.py`：`BacktestEngine` 模板使用示例
+- `08_deltafq_template.ipynb`：策略模板完整示例（BOLL策略，两种实现方式）
+- `09_multi_factor_strategy.ipynb`：多因子策略示例（SMA/EMA/RSI/KDJ/BOLL/OBV组合）
 
 ---
 
 ## 社区与贡献
 
 - 欢迎通过 Issue / PR 反馈问题、提交改进。
-- 项目遵循简洁的代码风格，建议在提交前运行基本的 lint/测试。
-
 ---
 
 ## 许可证

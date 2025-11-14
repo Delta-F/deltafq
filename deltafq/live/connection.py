@@ -5,7 +5,6 @@ Connection management for live trading.
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from ..core.base import BaseComponent
-from ..core.exceptions import TradingError
 
 
 class ConnectionManager(BaseComponent):
@@ -42,7 +41,7 @@ class ConnectionManager(BaseComponent):
         """Establish connection."""
         try:
             if name not in self.connection_configs:
-                raise TradingError(f"Connection {name} not found")
+                raise ValueError(f"Connection {name} not found")
             
             config = self.connection_configs[name]
             connection_type = config['type']
@@ -53,7 +52,7 @@ class ConnectionManager(BaseComponent):
             elif connection == 'data_feed':
                 connection = self._create_data_feed_connection(config['config'])
             else:
-                raise TradingError(f"Unknown connection type: {connection_type}")
+                raise ValueError(f"Unknown connection type: {connection_type}")
             
             # Test connection
             if self._test_connection(connection):

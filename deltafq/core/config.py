@@ -59,4 +59,22 @@ class Config:
                 config[k] = {}
             config = config[k]
         config[keys[-1]] = value
+    
+    def get_cache_dir(self) -> Path:
+        """Get cache directory path (project root / data_cache)."""
+        project_root = self._get_project_root()
+        cache_dir_name = self.get("data.cache_dir", "data_cache")
+        return project_root / cache_dir_name
+    
+    def _get_project_root(self) -> Path:
+        """Get project root directory by finding setup.py or pyproject.toml."""
+        current = Path(__file__).resolve()
+        # Go up from deltafq/core/config.py to project root
+        # deltafq/core/config.py -> deltafq/core -> deltafq -> project_root
+        for parent in current.parents:
+            if (parent / "setup.py").exists() or (parent / "pyproject.toml").exists():
+                return parent
+        # If not found, assume deltafq package is 2 levels up from config.py
+        # This should never happen in normal usage, but provides a safe fallback
+        return current.parent.parent.parent
 

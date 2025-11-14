@@ -49,22 +49,34 @@ class BacktestEngine(BaseComponent, ABC):
         self.trades_df = pd.DataFrame()
         self.values_df = pd.DataFrame()
         
-    def set_parameters(self, symbol: str, start_date: str, end_date: str, benchmark: str, 
-                      data_source: Optional[str] = None, initial_capital: Optional[float] = None, 
-                      commission: Optional[float] = None, slippage: Optional[float] = None) -> None:
+    def set_parameters(self, symbol: str, start_date: str, end_date: Optional[str] = None, benchmark: Optional[str] = None, 
+                      data_source: Optional[str] = "yahoo", initial_capital: Optional[float] = 1000000, 
+                      commission: Optional[float] = 0.001, slippage: Optional[float] = 0.001) -> None:
         """Set backtest parameters."""
         self.symbol = symbol
         self.start_date = start_date
         self.end_date = end_date
         self.benchmark = benchmark
         
-        self.initial_capital = initial_capital if initial_capital is not None else self.initial_capital
-        self.commission = commission if commission is not None else self.commission
-        self.slippage = slippage if slippage is not None else self.slippage
-        self.execution = ExecutionEngine(broker=None, initial_capital=self.initial_capital, commission=self.commission)
+        # Update capital and commission if provided
+        capital_changed = initial_capital is not None and initial_capital != self.initial_capital
+        commission_changed = commission is not None and commission != self.commission
+        
+        # Only recreate ExecutionEngine if capital or commission changed
+        if capital_changed or commission_changed:
+            self.initial_capital = initial_capital
+            self.commission = commission
+            self.slippage = slippage
+            self.execution = ExecutionEngine(
+                broker=None, 
+                initial_capital=self.initial_capital, 
+                commission=self.commission
+            )
 
-        self.data_source = data_source if data_source is not None else self.data_source
-        self.data_fetcher = DataFetcher(source=self.data_source)
+        # Only recreate DataFetcher if data_source changed
+        if data_source is not None and data_source != self.data_source:
+            self.data_source = data_source
+            self.data_fetcher = DataFetcher(source=self.data_source)
     
     def load_data(self) -> pd.DataFrame:
         """Load data via data fetcher."""
@@ -85,10 +97,6 @@ class BacktestEngine(BaseComponent, ABC):
             raise ValueError("Symbol must be set. Call set_parameters() first.")
         if signals is None and self.signals is None:
             raise ValueError("Signals must be set. Call add_strategy() first.")
-        
-        # Initialize empty DataFrames in case of error
-        self.trades_df = pd.DataFrame()
-        self.values_df = pd.DataFrame()
         
         try:            
             symbol = symbol if symbol is not None else self.symbol
@@ -148,13 +156,13 @@ class BacktestEngine(BaseComponent, ABC):
                 self.save_backtest_results()
             
             return self.trades_df, self.values_df
-            
+
         except Exception as e:
             self.logger.error(f"run_backtest error: {e}")
-            return self.trades_df, self.values_df
+            raise RuntimeError(f"Backtest execution failed: {e}") from e
     
     def calculate_metrics(self) -> Tuple[pd.DataFrame, Dict[str, float]]:
-        """Calculate backtest metrics, such as return, volatility, sharpe ratio, etc."""
+        """Calculate backtest metrics, such as return, max drawdown, sharpe ratio, etc."""
         self.values_metrics, self.metrics = self.reporter.compute(self.symbol, self.trades_df, self.values_df)
         return self.values_metrics, self.metrics
     
@@ -162,11 +170,14 @@ class BacktestEngine(BaseComponent, ABC):
         """Show backtest summary report."""
         self.reporter.print_summary(symbol=self.symbol, trades_df=self.trades_df, values_df=self.values_df)
         
-    def show_chart(self, use_plotly: bool = False) -> None:
+    def show_chart(self, use_plotly: bool = True) -> None:
         """Show backtest performance chart."""
-        benchmark_data = self.data_fetcher.fetch_data(self.benchmark, self.start_date, self.end_date, clean=True)
-        self.chart.plot_backtest_charts(values_df=self.values_df, benchmark_close=benchmark_data['Close'], use_plotly=use_plotly)
+        if self.benchmark is not None:
+            benchmark_data = self.data_fetcher.fetch_data(self.benchmark, self.start_date, self.end_date, clean=True)
+            self.chart.plot_backtest_charts(values_df=self.values_df, benchmark_close=benchmark_data['Close'], use_plotly=use_plotly)
+        else:
+            self.chart.plot_backtest_charts(values_df=self.values_df, use_plotly=use_plotly)
     
     def save_backtest_results(self) -> None:
         """Save backtest results to csv files."""
-        self.storage.save_backtest_results(trades_df=self.trades_df, values_df=self.values_df, symbol=self.symbol, strategy_name=self.strategy.name)
+        self.storage.save_backtest_results(trades_df=self.trades_df, values_df=self.values_df, symbol=self.symbol, strategy_name=self.strategy.name if self.strategy is not None else None)

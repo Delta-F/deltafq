@@ -6,7 +6,6 @@ import pandas as pd
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from ..core.base import BaseComponent
-from ..core.exceptions import TradingError
 from .order_manager import OrderManager
 from .position_manager import PositionManager
 
@@ -64,7 +63,7 @@ class ExecutionEngine(BaseComponent):
         try:
             # Validate price for limit orders
             if order_type == "limit" and price is None:
-                raise TradingError("Price is required for limit orders")
+                raise ValueError("Price is required for limit orders")
             
             # Create order
             order_id = self.order_manager.create_order(
@@ -96,7 +95,7 @@ class ExecutionEngine(BaseComponent):
             return order_id
             
         except Exception as e:
-            raise TradingError(f"Failed to execute order: {str(e)}")
+            raise RuntimeError(f"Failed to execute order: {str(e)}") from e
     
     def _execute_paper_trade(self, order_id: str, execution_price: float, timestamp: Optional[datetime] = None):
         """Execute paper trading with cash management."""

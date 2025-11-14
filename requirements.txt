@@ -16,9 +16,7 @@ requests>=2.25.0
 # TA-Lib technical indicators (optional):
 # TA-Lib>=0.4.24
 
-# Development and testing
-pytest>=6.2.0
-pytest-cov>=2.12.0
+# Development tools
 black>=21.0.0
 flake8>=3.9.0
 

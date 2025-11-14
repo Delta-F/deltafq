@@ -6,7 +6,6 @@ from typing import Any, Dict
 import pandas as pd
 
 from ..core.base import BaseComponent
-from ..core.exceptions import StrategyError
 
 
 class BaseStrategy(BaseComponent, ABC):
@@ -29,4 +28,4 @@ class BaseStrategy(BaseComponent, ABC):
             self.signals = self.generate_signals(data)
             return {"strategy_name": self.name, "signals": self.signals.astype(int)}
         except Exception as exc:
-            raise StrategyError(f"Strategy execution failed: {exc}") from exc
+            raise RuntimeError(f"Strategy execution failed: {exc}") from exc

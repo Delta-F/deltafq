@@ -1,4 +1,0 @@
-"""
-Test suite for DeltaFQ.
-"""
-
