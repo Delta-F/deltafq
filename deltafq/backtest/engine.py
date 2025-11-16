@@ -66,7 +66,6 @@ class BacktestEngine(BaseComponent, ABC):
         if capital_changed or commission_changed:
             self.initial_capital = initial_capital
             self.commission = commission
-            self.slippage = slippage
             self.execution = ExecutionEngine(
                 broker=None, 
                 initial_capital=self.initial_capital, 

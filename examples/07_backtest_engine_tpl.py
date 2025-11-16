@@ -58,7 +58,7 @@ def main() -> None:
     # show report
     engine.show_report()
     # show chart
-    # engine.show_chart(use_plotly=True)
+    engine.show_chart(use_plotly=True)
     # save backtest results
     engine.save_backtest_results()
     
