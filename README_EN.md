@@ -1,16 +1,19 @@
 # DeltaFQ
 
+<div align="center">
+
+[中文](README.md) | [English](README_EN.md)
+
 ![Version](https://img.shields.io/badge/version-0.5.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-> Modern Python quantitative finance framework focused on strategy research, backtesting execution, and performance visualization.
+A Python-based quantitative trading system development framework focused on strategy research, backtesting execution, and performance visualization. <em style="color: red;">Simulated trading and live trading features are under development.</em>
 
-**Language / 语言**: [中文](README.md) | [English](README_EN.md)
+</div>
 
----
 
 ## Installation
 
@@ -18,30 +21,10 @@
 pip install deltafq
 ```
 
-- Requires Python ≥ 3.9.  
 - Optional components like Plotly and TA-Lib can be installed via `pip install deltafq[viz]` and `pip install deltafq[talib]`.
 
----
 
-## Overview
-
-- Lightweight, modular quantitative research infrastructure covering the full pipeline: **data → indicators → strategy → backtest → visualization**.
-- Built-in consistent signal standard (`Series` type) for strategy reuse and component decoupling.
-- Suitable for desktop research workflows and script automation, supporting rapid validation and continuous integration.
-
----
-
-## Core Capabilities
-
-- **Data Access**: Unified data fetching, cleaning, and validation processes.
-- **Indicator Library**: `TechnicalIndicators`/`SignalGenerator` provide mainstream indicators and various combination methods.
-- **Strategy Layer**: `BaseStrategy` abstracts strategy lifecycle for easy extension and backtest reuse.
-- **Backtest Execution**: `BacktestEngine` integrates underlying execution, position management, and performance metrics.
-- **Performance Visualization**: `PerformanceReporter` (bilingual) and `PerformanceChart` (Matplotlib / Plotly).
-
----
-
-## Module Architecture
+## Core Modules
 
 ```
 deltafq/
@@ -53,16 +36,6 @@ deltafq/
 └── trader      # Trading execution and risk control (ongoing expansion)
 ```
 
-### API Interfaces
-
-- **data**: `DataFetcher` (fetch Yahoo Finance data using yfinance), `DataCleaner`, `DataStorage`
-- **indicators**: `TechnicalIndicators` (SMA/EMA/RSI/KDJ/BOLL/OBV/MACD, etc.), `TalibIndicators` (optional, requires TA-Lib), `FundamentalIndicators`
-- **strategy**: `BaseStrategy` (strategy base class), `SignalGenerator` (signal generation and combination)
-- **backtest**: `BacktestEngine` (backtest engine), `PerformanceReporter` (performance reports, bilingual support)
-- **charts**: `PerformanceChart` (visualization using Matplotlib/Plotly), `PriceChart`, `SignalChart`
-- **trader**: `ExecutionEngine` (trading execution engine), `OrderManager`, `PositionManager`, `Broker` (broker API not yet integrated)
-
----
 
 ## Quick Start (BOLL Strategy)
 
@@ -87,28 +60,13 @@ reporter.print_summary(symbol, trades_df, values_df, title=f"{symbol} BOLL Strat
 chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL Strategy")
 ```
 
----
+- More example scripts: [examples](examples/)
 
-## Examples & Tools
-
-- `01_fetch_yahoo_data.py`: Fetch historical data from Yahoo Finance using yfinance
-- `02_compare_indicators.py`: Technical indicator calculation and comparison
-- `03_compare_signals.py`: Multi-indicator signal generation and combination
-- `04_backtest_execution.py`: Single-strategy backtest execution workflow
-- `05_backtest_report.py / 05_backtest_charts.py`: Performance reports and chart visualization
-- `06_base_strategy_demo.py`: Moving average crossover strategy example based on `BaseStrategy`
-- `07_backtest_engine_tpl.py`: `BacktestEngine` template usage example
-- `08_deltafq_template.ipynb`: Complete strategy template example (BOLL strategy, two implementation methods)
-- `09_multi_factor_strategy.ipynb`: Multi-factor strategy example (SMA/EMA/RSI/KDJ/BOLL/OBV combination)
-
----
 
 ## Community & Contributing
 
-- Welcome to provide feedback and submit improvements via Issues / PRs.
-- The project follows a clean code style; it's recommended to run basic lint/tests before submitting.
+- Welcome to provide feedback and submit improvements via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
 
----
 
 ## License
 
