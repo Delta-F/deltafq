@@ -28,7 +28,7 @@ pip install deltafq
 
 ```
 deltafq/
-├── data        # 数据获取、清洗、存储接口
+├── data        # 数据获取、清洗、存储接口（支持股票、基金数据）
 ├── indicators  # 技术指标与因子计算
 ├── strategy    # 信号生成器与策略基类
 ├── backtest    # 回测执行、绩效度量、报告

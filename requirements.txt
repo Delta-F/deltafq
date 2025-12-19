@@ -9,6 +9,7 @@ matplotlib>=3.4.0
 # Data sources
 yfinance>=0.1.70
 requests>=2.25.0
+beautifulsoup4>=4.9.0
 
 # Optional extras (install manually if needed)
 # Plotly interactive charts:
