@@ -1,9 +1,9 @@
 """
-Minimal example: fetch fund historical data from EastMoney.
+Example: fetch fund net value data using DataFetcher.
 """
 
-import os
 import sys
+import os
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if str(project_root) not in sys.path:
@@ -15,20 +15,25 @@ from deltafq.data import DataFetcher
 def main() -> None:
     fetcher = DataFetcher()
     
-    # Test fetching fund data (limit to 3 pages for quick test)
-    fund_code = "000001"
-    print(f"Fetching fund data for {fund_code} (max 3 pages)...")
-    fund_data = fetcher.fetch_fund(fund_code=fund_code, max_page=2)
-    
-    print(f"\nTotal records: {len(fund_data)}")
-    print("\nFirst 10 records:")
-    print(fund_data.head(10))
-    print("\nLast 10 records:")
-    print(fund_data.tail(10))
-    print("\nData info:")
-    print(fund_data.info())
-    print("\nData columns:")
-    print(fund_data.columns.tolist())
+    # Example 1: Fetch a single page
+    print("=" * 60)
+    print("Example 1: Fetch single page data")
+    print("=" * 60)
+    data_single = fetcher.fetch_fund_data(code="018956", page=1)
+    print(f"Fetched {len(data_single)} records from page 1")
+    print(data_single.head())
+    print()
+
+    # Example 2: Fetch all pages (this may take some time)
+    print("=" * 60)
+    print("Example 2: Fetch all pages data")
+    print("=" * 60)
+    print("Note: This will fetch all pages, which may take some time...")
+    data_all = fetcher.fetch_fund_data(code="018956", page=None)
+    print(f"Fetched {len(data_all)} records in total")
+    print(f"Date range: {data_all['净值日期'].min()} to {data_all['净值日期'].max()}")
+    print(data_all.head())
+    print(data_all.tail())
 
 
 if __name__ == "__main__":
