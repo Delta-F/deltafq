@@ -60,6 +60,7 @@ class DataFetcher(BaseComponent):
         def _get_page(p: int) -> pd.DataFrame:
             params = {**base_params, "page": p}
             resp = requests.get(base_url, params=params)
+            self.logger.info(f"Fetching page {p} for fund {code}")
             match = re.search(r'content:"([^"]+)"', resp.text, re.DOTALL)
             if not match:
                 raise ValueError(f"Unable to parse API response (page={p})")

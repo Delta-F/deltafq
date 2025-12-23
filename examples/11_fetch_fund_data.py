@@ -12,6 +12,41 @@ if str(project_root) not in sys.path:
 from deltafq.data import DataFetcher
 
 
+def fetch_watchlist_funds(output_dir: str = "fund_data") -> None:
+    """
+    Fetch data for watchlist funds and save to CSV files.
+    """
+    # 自选基金列表
+    watchlist_codes = ["050025", "270042", "160119", "510300", "000071", "510880"]
+    
+    fetcher = DataFetcher()
+    
+    print("=" * 60)
+    print("Fetching watchlist funds data")
+    print("=" * 60)
+    print(f"Watchlist funds: {', '.join(watchlist_codes)}")
+    
+    for code in watchlist_codes:
+        try:
+            data = fetcher.fetch_fund_data(code=code, page=None)
+            
+            if len(data) > 0:
+                # 保存到CSV文件
+                csv_filename = f"fund_{code}.csv"
+                data.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+                print(f"  ✓ Saved {len(data)} records to {csv_filename}")
+                print(f"  Date range: {data['净值日期'].min()} to {data['净值日期'].max()}")
+            else:
+                print(f"  ✗ No data found for fund {code}")
+        except Exception as e:
+            print(f"  ✗ Error fetching data for fund {code}: {str(e)}")
+        print()
+    
+    print("=" * 60)
+    print("All watchlist funds data fetched and saved!")
+    print("=" * 60)
+
+
 def main() -> None:
     fetcher = DataFetcher()
     
@@ -34,8 +69,15 @@ def main() -> None:
     print(f"Date range: {data_all['净值日期'].min()} to {data_all['净值日期'].max()}")
     print(data_all.head())
     print(data_all.tail())
+    print()
+
+    # Example 3: Fetch watchlist funds and save to CSV
+    print("=" * 60)
+    print("Example 3: Fetch watchlist funds and save to CSV")
+    print("=" * 60)
+    fetch_watchlist_funds(output_dir="fund_data")
 
 
 if __name__ == "__main__":
-    main()
-
+    # main()
+    fetch_watchlist_funds()
