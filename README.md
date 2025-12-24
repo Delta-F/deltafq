@@ -61,6 +61,8 @@ chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], t
 ```
 
 - 更多示例脚本：[examples](examples/)
+  - 股票数据获取：`01_fetch_yahoo_data.py`
+  - 基金数据获取：`11_fetch_fund_data.py`
 
 
 ## 社区与贡献

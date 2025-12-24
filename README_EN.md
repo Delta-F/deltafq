@@ -28,7 +28,7 @@ pip install deltafq
 
 ```
 deltafq/
-├── data        # Data acquisition, cleaning, storage interfaces
+├── data        # Data acquisition, cleaning, storage interfaces (stocks, funds)
 ├── indicators  # Technical indicators and factor calculations
 ├── strategy    # Signal generators and strategy base classes
 ├── backtest    # Backtest execution, performance metrics, reporting
@@ -61,6 +61,8 @@ chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], t
 ```
 
 - More example scripts: [examples](examples/)
+  - Stock data fetching: `01_fetch_yahoo_data.py`
+  - Fund data fetching: `11_fetch_fund_data.py`
 
 
 ## Community & Contributing
