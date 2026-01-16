@@ -12,6 +12,11 @@
 
 A Python-based quantitative trading system development framework focused on strategy research, backtesting execution, and performance visualization. <em style="color: red;">Simulated trading and live trading features are under development.</em>
 
+<p align="center">
+  <img src="assets/overview.png" width="47%" alt="Backtest Overview" />
+  <img src="assets/signals.png" width="47%" alt="Strategy Signals" />
+</p>
+
 </div>
 
 

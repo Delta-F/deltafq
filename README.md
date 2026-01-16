@@ -12,6 +12,11 @@
 
 基于 Python 的量化交易系统开发框架，专注于策略研究、回测执行与绩效可视化。<em style="color: red;">模拟交易与实时交易功能正在开发中。</em>
 
+<p align="center">
+  <img src="assets/overview.png" width="47%" alt="回测结果面板" />
+  <img src="assets/signals.png" width="47%" alt="策略信号图" />
+</p>
+
 </div>
 
 
