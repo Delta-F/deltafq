@@ -4,17 +4,17 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.5.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.6.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-A Python-based quantitative trading system development framework focused on strategy research, backtesting execution, and performance visualization. <em style="color: red;">Simulated trading and live trading features are under development.</em>
+A Python-based A-share low-frequency quantitative trading framework covering research, backtesting, and execution, with built-in paper trading and pluggable live gateways.
 
 <p align="center">
-  <img src="assets/overview.png" width="47%" alt="Backtest Overview" />
-  <img src="assets/signals.png" width="47%" alt="Strategy Signals" />
+  <img src="assets/signals.png" width="48%" alt="Strategy Signals" />
+  <img src="assets/overview.png" width="48%" alt="Backtest Overview" />
 </p>
 
 </div>
@@ -26,9 +26,6 @@ A Python-based quantitative trading system development framework focused on stra
 pip install deltafq
 ```
 
-- Optional components like Plotly and TA-Lib can be installed via `pip install deltafq[viz]` and `pip install deltafq[talib]`.
-
-
 ## Core Modules
 
 ```
@@ -37,8 +34,10 @@ deltafq/
 ├── indicators  # Technical indicators and factor calculations
 ├── strategy    # Signal generators and strategy base classes
 ├── backtest    # Backtest execution, performance metrics, reporting
-├── charts      # Signal/performance chart components
-└── trader      # Trading execution and risk control (ongoing expansion)
+├── live        # Event engine, gateway abstraction, routing
+├── adapters    # Pluggable data/trade adapters
+├── trader      # Execution with order/position management
+└── charts      # Signal/performance chart components
 ```
 
 
@@ -65,14 +64,19 @@ reporter.print_summary(symbol, trades_df, values_df, title=f"{symbol} BOLL Strat
 chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL Strategy")
 ```
 
-- More example scripts: [examples](examples/)
-  - Stock data fetching: `01_fetch_yahoo_data.py`
-  - Fund data fetching: `11_fetch_fund_data.py`
+
+## Application Example
+DeltaFStation targets A-share low-frequency trading and is built on deltafq, integrating data services, strategy management, and trading access with paper and live support. Project: https://github.com/Delta-F/deltafstation/
+
+<p align="center">
+  <img src="assets/deltafstation_1.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Architecture" />
+  <img src="assets/deltafstation_2.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Backtest Engine" />
+</p>
 
 
 ## Community & Contributing
 
-- Welcome to provide feedback and submit improvements via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
+Welcome to provide feedback and submit improvements via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
 
 
 ## License

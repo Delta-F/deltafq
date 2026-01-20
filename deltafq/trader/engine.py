@@ -13,7 +13,7 @@ from .position_manager import PositionManager
 class ExecutionEngine(BaseComponent):
     """
     Trade execution engine for real-time trading.
-    Supports paper trading (broker=None) and live trading (broker=Broker).
+    Supports paper trading (broker=None) and live trading (broker=adapter).
     Paper trading manages cash internally. Live trading uses broker for account info.
     """
     
@@ -22,7 +22,7 @@ class ExecutionEngine(BaseComponent):
         """
         Initialize execution engine.
         Args:
-            broker: Broker for live trading. None for paper trading.
+            broker: Broker adapter for live trading. None for paper trading.
             initial_capital: Initial capital for paper trading. Defaults to 1000000.
             commission: Commission rate for paper trading. Defaults to 0.001.
         """

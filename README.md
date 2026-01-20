@@ -4,17 +4,17 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.5.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.6.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-基于 Python 的量化交易系统开发框架，专注于策略研究、回测执行与绩效可视化。<em style="color: red;">模拟交易与实时交易功能正在开发中。</em>
+面向 A 股低频量化的 Python 框架，覆盖研究、回测与执行，内置本地模拟交易并可对接实盘网关。
 
 <p align="center">
-  <img src="assets/overview.png" width="47%" alt="回测结果面板" />
-  <img src="assets/signals.png" width="47%" alt="策略信号图" />
+  <img src="assets/signals.png" width="48%" alt="策略信号图" />
+  <img src="assets/overview.png" width="48%" alt="回测结果面板" />
 </p>
 
 </div>
@@ -26,9 +26,6 @@
 pip install deltafq
 ```
 
-- Plotly、TA-Lib 等可选组件可通过 `pip install deltafq[viz]`、`pip install deltafq[talib]` 安装。
-
-
 ## 核心模块
 
 ```
@@ -37,8 +34,10 @@ deltafq/
 ├── indicators  # 技术指标与因子计算
 ├── strategy    # 信号生成器与策略基类
 ├── backtest    # 回测执行、绩效度量、报告
-├── charts      # 信号、绩效图表组件
-└── trader      # 交易执行与风控（持续扩展）
+├── live        # 事件引擎、网关抽象与路由
+├── adapters    # 行情/交易适配器（可插拔）
+├── trader      # 交易执行与订单/持仓管理
+└── charts      # 信号、绩效图表组件
 ```
 
 
@@ -65,14 +64,19 @@ reporter.print_summary(symbol, trades_df, values_df, title=f"{symbol} BOLL 策�
 chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL 策略")
 ```
 
-- 更多示例脚本：[examples](examples/)
-  - 股票数据获取：`01_fetch_yahoo_data.py`
-  - 基金数据获取：`11_fetch_fund_data.py`
+
+## 应用示例
+DeltaFStation 面向 A 股低频量化，基于 deltafq 集成数据服务、策略管理与交易接入，支持模拟与实盘。项目地址：https://github.com/Delta-F/deltafstation/
+
+<p align="center">
+  <img src="assets/deltafstation_1.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Architecture" />
+  <img src="assets/deltafstation_2.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Backtest Engine" />
+</p>
 
 
 ## 社区与贡献
 
-- 欢迎通过 [Issue](https://github.com/Delta-F/deltafq/issues)或 PR 反馈问题、提交改进。
+欢迎通过 [Issue](https://github.com/Delta-F/deltafq/issues)或 PR 反馈问题、提交改进。
 
 
 ## 许可证
