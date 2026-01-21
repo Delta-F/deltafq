@@ -10,7 +10,7 @@
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-A Python-based A-share low-frequency quantitative trading framework covering research, backtesting, and execution, with built-in paper trading and pluggable live gateways.
+An all-in-one A-share low-frequency quantitative solution: Covering the full "Research-Backtest-Execution" lifecycle, with built-in simulation environments and live gateway interfaces to build industrial-grade Python quantitative workflows from scratch to production.
 
 <p align="center">
   <img src="assets/signals.png" width="48%" alt="Strategy Signals" />
@@ -20,13 +20,67 @@ A Python-based A-share low-frequency quantitative trading framework covering res
 </div>
 
 
+## Learning & Community
+
+- **Tutorials**: AI Quantitative Trading Course on Imooc (Coming soon).
+- **WeChat Official Account**: Search for **DeltaFQ开源量化** or scan the QR code below for the latest strategy research and updates.
+
+<p align="center">
+  <img src="assets/wechat_qr.png" width="400" alt="WeChat Official Account" />
+</p>
+
+
 ## Installation
 
 ```bash
 pip install deltafq
 ```
 
-## Core Modules
+## Key Features
+
+- 📥 Data Engine - Integrated yfinance API, akshare real-time data, and QMT connectivity
+- 🧪 Indicators - Native pandas technical indicators and built-in TA-Lib support
+- 🧠 Strategy Lab - Fast prototyping with signal generators and `BaseStrategy` templates
+- 📉 Backtest Pro - High-performance engine with detailed metrics and drawdown analysis
+- 🤖 Trade Execution - Pluggable gateway architecture for paper trading and live API integration
+- 📊 Visualization - Interactive Plotly-based charts and multi-language performance reports
+- 📝 Logging - Unified logging and output management with multi-level support and file storage
+
+
+## Quick Start
+
+```python
+import deltafq as dfq
+
+# 1. Define strategy logic
+class MyStrategy(dfq.strategy.BaseStrategy):
+    def generate_signals(self, data):
+        bands = dfq.indicators.TechnicalIndicators().boll(data["Close"])
+        return dfq.strategy.SignalGenerator().boll_signals(data["Close"], bands)
+
+# 2. Minimal backtest & results
+engine = dfq.backtest.BacktestEngine()
+engine.set_parameters("GOOGL", "2025-07-26", "2026-01-26")
+engine.load_data()
+engine.add_strategy(MyStrategy(name="BOLL"))
+engine.run_backtest()
+engine.show_report()
+engine.show_chart(use_plotly=False)
+```
+
+
+## Application Example
+DeltaFStation targets A-share low-frequency trading and is built on deltafq, integrating data services, strategy management, and trading access with paper and live support. Project: https://github.com/Delta-F/deltafstation/
+
+<table align="center">
+  <tr>
+    <td><img src="assets/deltafstation_1.png" height="260" alt="DeltaFStation Architecture" /></td>
+    <td><img src="assets/deltafstation_2.png" height="260" alt="DeltaFStation Backtest Engine" /></td>
+  </tr>
+</table>
+
+
+## Project Architecture
 
 ```
 deltafq/
@@ -40,43 +94,17 @@ deltafq/
 └── charts      # Signal/performance chart components
 ```
 
-
-## Quick Start (BOLL Strategy)
-
-```python
-import deltafq as dfq
-
-symbol = "AAPL"
-fetcher = dfq.data.DataFetcher()
-indicators = dfq.indicators.TechnicalIndicators()
-signals = dfq.strategy.SignalGenerator()
-engine = dfq.backtest.BacktestEngine(initial_capital=100_000)
-reporter = dfq.backtest.PerformanceReporter()
-chart = dfq.charts.PerformanceChart()
-
-data = fetcher.fetch_data(symbol, "2023-01-01", "2023-12-31", clean=True)
-bands = indicators.boll(data["Close"], period=20, std_dev=2)
-signal_series = signals.boll_signals(price=data["Close"], bands=bands, method="cross_current")
-
-trades_df, values_df = engine.run_backtest(symbol, signal_series, data["Close"], strategy_name="BOLL")
-
-reporter.print_summary(symbol, trades_df, values_df, title=f"{symbol} BOLL Strategy", language="en")
-chart.plot_backtest_charts(values_df=values_df, benchmark_close=data["Close"], title=f"{symbol} BOLL Strategy")
-```
+<table align="center">
+  <tr>
+    <td><img src="assets/deltafq_arch.png" height="400" alt="Project Architecture" /></td>
+    <td><img src="assets/deltafq_wf.png" height="400" alt="Workflow" /></td>
+  </tr>
+</table>
 
 
-## Application Example
-DeltaFStation targets A-share low-frequency trading and is built on deltafq, integrating data services, strategy management, and trading access with paper and live support. Project: https://github.com/Delta-F/deltafstation/
+## Contributing
 
-<p align="center">
-  <img src="assets/deltafstation_1.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Architecture" />
-  <img src="assets/deltafstation_2.png" width="48%" height="260" style="object-fit:contain" alt="DeltaFStation Backtest Engine" />
-</p>
-
-
-## Community & Contributing
-
-Welcome to provide feedback and submit improvements via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
+Feedback and improvements are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
 
 
 ## License
