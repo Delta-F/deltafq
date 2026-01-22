@@ -20,14 +20,9 @@ An all-in-one A-share low-frequency quantitative solution: Covering the full "Re
 </div>
 
 
-## Learning & Community
+## Tutorials
 
-- **Tutorials**: AI Quantitative Trading Course on Imooc (Coming soon).
-- **WeChat Official Account**: Search for **DeltaFQ开源量化** or scan the QR code below for the latest strategy research and updates.
-
-<p align="center">
-  <img src="assets/wechat_qr.png" width="400" alt="WeChat Official Account" />
-</p>
+AI Quantitative Trading Course: Imooc Specialization (Coming soon)
 
 
 ## Installation
@@ -104,7 +99,12 @@ deltafq/
 
 ## Contributing
 
-Feedback and improvements are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
+- Feedback: Contributions and bug reports are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
+- WeChat Account: Follow `DeltaFQ开源量化` for updates, strategies, and resources.
+
+<p align="center">
+  <img src="assets/wechat_qr.png" width="150" alt="WeChat Official Account" />
+</p>
 
 
 ## License

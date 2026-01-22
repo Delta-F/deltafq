@@ -20,14 +20,9 @@ A 股低频量化一站式解决方案： 覆盖“研究-回测-执行”全生
 </div>
 
 
-## 学习与社区
+## 教程
 
-- **体系课教程**：慕课网 AI 量化体系课（即将上线）。
-- **微信公众号**：扫描下方二维码关注 **DeltaFQ开源量化**，获取最新策略研究与更新动态。
-
-<p align="center">
-  <img src="assets/wechat_qr.png" width="400" alt="微信公众号" />
-</p>
+AI量化体系课：慕课网专项课程（即将上线）
 
 
 ## 安装
@@ -104,7 +99,12 @@ deltafq/
 
 ## 参与贡献
 
-欢迎通过 [Issue](https://github.com/Delta-F/deltafq/issues) 或 PR 反馈问题、提交改进。
+- 反馈与改进：欢迎通过 [Issue](https://github.com/Delta-F/deltafq/issues) 或 PR 提交改进。
+- 微信公众号：关注 `DeltaFQ开源量化`，获取版本更新、重要策略与量化资料。
+
+<p align="center">
+  <img src="assets/wechat_qr.png" width="150" alt="微信公众号" />
+</p>
 
 
 ## 许可证
