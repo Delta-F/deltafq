@@ -8,6 +8,7 @@ matplotlib>=3.4.0
 
 # Data sources
 yfinance>=0.1.70
+akshare>=1.13.0
 requests>=2.25.0
 beautifulsoup4>=4.9.0
 

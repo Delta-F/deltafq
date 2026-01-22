@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deltafq"
-description = "A comprehensive Python quantitative finance library"
+description = "A-share low-frequency quantitative trading framework covering research, backtesting, and execution"
 authors = [
     {name = "DeltaF", email = "leek_li@outlook.com"}
 ]
-readme = "README_EN.md"
+readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -31,6 +31,8 @@ dependencies = [
     "matplotlib>=3.4.0",
     "yfinance>=0.1.70",
     "requests>=2.25.0",
+    "akshare>=1.13.0",
+    "plotly>=5.0.0",
 ]
 
 # Auto-read version from the VERSION file at build time
