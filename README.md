@@ -20,9 +20,9 @@ A 股低频量化一站式解决方案： 覆盖“研究-回测-执行”全生
 </div>
 
 
-## 教程
+## 专属教程
 
-AI量化体系课：慕课网专项课程（即将上线）
+慕课网 - 程序员AI量化理财体系课：https://class.imooc.com/sale/aiqwm
 
 
 ## 安装
@@ -33,7 +33,7 @@ pip install deltafq
 
 ## 核心功能
 
-- 📥 数据模块 - 集成 yfinance 免费数据接口、akshare 实时行情及 QMT 行情 API
+- 📥 数据模块 - 已集成 yfinance 免费数据接口；计划接入 tushare、QMT 实盘行情
 - 🧪 指标模块 - 提供 Pandas 原生技术指标计算，内置常用 TA-Lib 指标库
 - 🧠 策略模块 - 支持信号生成器与 `BaseStrategy` 模板，实现策略极速开发
 - 📉 回测模块 - 高性能回测引擎，支持多策略对比、精确绩效统计与深度回撤分析

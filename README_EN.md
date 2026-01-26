@@ -20,9 +20,9 @@ An all-in-one A-share low-frequency quantitative solution: Covering the full "Re
 </div>
 
 
-## Tutorials
+## Exclusive Tutorials
 
-AI Quantitative Trading Course: Imooc Specialization (Coming soon)
+慕课网 - 程序员AI量化理财体系课：https://class.imooc.com/sale/aiqwm
 
 
 ## Installation
@@ -33,7 +33,7 @@ pip install deltafq
 
 ## Key Features
 
-- 📥 Data Engine - Integrated yfinance API, akshare real-time data, and QMT connectivity
+- 📥 Data Engine - Integrated yfinance; planned support for tushare and QMT
 - 🧪 Indicators - Native pandas technical indicators and built-in TA-Lib support
 - 🧠 Strategy Lab - Fast prototyping with signal generators and `BaseStrategy` templates
 - 📉 Backtest Pro - High-performance engine with detailed metrics and drawdown analysis
