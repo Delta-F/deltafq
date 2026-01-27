@@ -10,7 +10,7 @@
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-A 股低频量化一站式解决方案： 覆盖“研究-回测-执行”全生命周期，内置仿真交易环境与实盘网关接口，可构建从零到实盘的工业级 Python 量化工作流。
+Python 开源量化框架： 覆盖“研究-回测-交易”全生命周期，构建从零到实盘的工业级量化工作流。
 
 <p align="center">
   <img src="assets/signals.png" width="48%" alt="策略信号图" />
