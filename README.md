@@ -65,7 +65,7 @@ engine.show_chart(use_plotly=False)
 
 
 ## 应用示例
-DeltaFStation 面向 A 股低频量化，基于 deltafq 集成数据服务、策略管理与交易接入，支持模拟与实盘。项目地址：https://github.com/Delta-F/deltafstation/
+DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务、策略管理与交易接入，支持模拟与实盘。项目地址：https://github.com/Delta-F/deltafstation/
 
 <table align="center">
   <tr>
