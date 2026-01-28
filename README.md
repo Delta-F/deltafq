@@ -4,13 +4,13 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.6.0-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.6.1-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
 ![License](https://img.shields.io/badge/license-MIT-10B981.svg)
 
-Python 开源量化框架： 覆盖“研究-回测-交易”全生命周期，构建从零到实盘的工业级量化工作流。
+Python 开源量化框架： 覆盖“研究、回测、交易”全生命周期，构建从零到实盘的工业级量化闭环工作流。
 
 <p align="center">
   <img src="assets/signals.png" width="48%" alt="策略信号图" />
@@ -33,14 +33,24 @@ pip install deltafq
 
 ## 核心功能
 
-- 📥 数据模块 - 已集成 yfinance 免费数据接口；计划接入 tushare、QMT 实盘行情
-- 🧪 指标模块 - 提供 Pandas 原生技术指标计算，内置常用 TA-Lib 指标库
-- 🧠 策略模块 - 支持信号生成器与 `BaseStrategy` 模板，实现策略极速开发
-- 📉 回测模块 - 高性能回测引擎，支持多策略对比、精确绩效统计与深度回撤分析
-- 🤖 交易接入 - 采用可插拔网关架构，支持本地纸面交易与实盘 API 无缝切换
-- 📊 可视化 - 基于 Plotly 的交互式绩效图表，支持中英文双语回测报告
-- 📝 日志管理 - 统一的日志记录与输出管理，支持多级别日志与文件存储
+- 📥 获取历史数据 - 默认集成免费数据源，支持全球多市场
+- 🧪 常用指标计算 - 快速计算 MACD、布林带等，内置兼容 TA-Lib
+- 🧠 极速策略开发 - 几行代码即可通过信号生成器与模板完成开发
+- 📉 高性能回测 - 极速跑测，支持多策略对比与深度绩效分析
+- ⚡ 实时行情分发 - 基于事件驱动架构，实现秒级分发与 Tick 处理
+- 🤖 实盘/仿真交易 - 插件化设计，支持从模拟账户到实盘柜台无缝切换
+- 📊 交互式可视化 - 自动生成 Plotly 交互式图表，精准洞察细节
+- 📝 系统日志管理 - 统一管理运行状态，支持多级记录与文件存储
 
+
+## 接口集成
+
+DeltaFQ 通过插件化适配器（Adapters）灵活接入各类外部接口：
+
+- ✅ **yfinance** - 已接入，支持多市场历史与实时行情获取
+- ✅ **PaperTrade** - 已接入，支持多市场本地模拟交易与持仓管理
+- 🛠️ **qmt** - 计划中，支持 A 股实盘行情快照与柜台订单执行
+- 🛠️ **Tushare** - 计划中，提供更丰富的 A 股金融基础数据
 
 ## 快速上手
 

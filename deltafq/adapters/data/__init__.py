@@ -1,4 +1,3 @@
-from .akshare import AkshareDataGateway
-from .simulated import SimulatedDataGateway
+from .yfinance_gateway import YFinanceDataGateway
 
-__all__ = ["AkshareDataGateway", "SimulatedDataGateway"]
+__all__ = ["YFinanceDataGateway"]

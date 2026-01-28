@@ -1,12 +1,11 @@
 from typing import Any, Dict, Type
 
 from .gateways import DataGateway, TradeGateway
-from ..adapters.data import SimulatedDataGateway, AkshareDataGateway
+from ..adapters.data import YFinanceDataGateway
 from ..adapters.trade import PaperTradeGateway
 
 DATA_GATEWAYS: Dict[str, Type[DataGateway]] = {
-    "sim": SimulatedDataGateway,
-    "akshare": AkshareDataGateway,
+    "yfinance": YFinanceDataGateway,
 }
 
 TRADE_GATEWAYS: Dict[str, Type[TradeGateway]] = {

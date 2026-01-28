@@ -2,10 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
 
 from .models import TickData, OrderRequest
+from ..core.base import BaseComponent
 
 
-class DataGateway(ABC):
-    def __init__(self) -> None:
+class DataGateway(BaseComponent, ABC):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self._tick_handler: Optional[Callable[[TickData], None]] = None
 
     def set_tick_handler(self, handler: Callable[[TickData], None]) -> None:
