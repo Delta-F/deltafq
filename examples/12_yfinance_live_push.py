@@ -16,13 +16,17 @@ def main():
     gateway = create_data_gateway("yfinance", interval=5.0)
     
     # 2. Setup handlers: simulate frontend/backend data processing
+    history_counts = {}
+
     def on_tick(t):
         if t.source == "yf_warmup":
-            # Simulate historical data loading (to fill charts)
-            print(f"[History] {t.symbol} -> {t.price} ({t.timestamp.strftime('%H:%M')})")
+            # Summary display for historical data to avoid console flooding
+            history_counts[t.symbol] = history_counts.get(t.symbol, 0) + 1
+            if history_counts[t.symbol] % 100 == 1:  # Print every 100th bar as a progress indicator
+                print(f"[History] {t.symbol} loading... (count: {history_counts[t.symbol]})")
         else:
             # Simulate real-time data update
-            print(f"[Live]    {t.symbol} -> {t.price} ({t.timestamp.strftime('%H:%M:%S')})")
+            print(f"[Live]    {t.symbol} -> {t.price} | Vol: {t.volume} ({t.timestamp.strftime('%H:%M:%S')})")
 
     event_engine.on(EVENT_TICK, on_tick)
     gateway.set_tick_handler(lambda tick: event_engine.emit(EVENT_TICK, tick))
@@ -34,9 +38,9 @@ def main():
     gateway.start()
     
     # 4. Subscribe: This will trigger the _warm_up sequence first
-    symbol = "BTC-USD"
-    print(f"\n>>> Subscribing to {symbol} (includes historical warm-up)...")
-    gateway.subscribe([symbol])
+    symbols = ["000001.SS", "GOOGL", "BTC-USD"]
+    print(f"\n>>> Subscribing to {symbols} (includes historical warm-up)...")
+    gateway.subscribe(symbols)
     
     # 5. Keep main thread alive
     try:
@@ -49,15 +53,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # Output Example:
-    """
-    [10:15:01] YFinanceDataGateway   >>> INFO     >>> Subscribed to BTC-USD
-    [10:15:01] YFinanceDataGateway   >>> INFO     >>> Warming up BTC-USD with intraday history...
-    [History] BTC-USD -> 102450.5 (00:01)
-    [History] BTC-USD -> 102460.2 (00:02)
-    ... (pushed today's history points) ...
-    [10:15:03] YFinanceDataGateway   >>> INFO     >>> Warm-up complete for BTC-USD: 615 bars pushed
-    
-    [Live]    BTC-USD -> 103120.5 (10:15:05)
-    [Live]    BTC-USD -> 103125.1 (10:15:10)
-    """

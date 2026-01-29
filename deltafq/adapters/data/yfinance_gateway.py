@@ -8,7 +8,10 @@ from ...live.gateways import DataGateway
 from ...live.models import TickData
 
 class YFinanceDataGateway(DataGateway):
-    """Market data gateway implementation using yfinance."""
+    """
+    Market data gateway implementation using yfinance.
+    Note: All timestamps are standardized to Naive UTC.
+    """
     
     def __init__(self, interval: float = 60.0, **kwargs) -> None:
         """Initialize the gateway."""
@@ -26,10 +29,10 @@ class YFinanceDataGateway(DataGateway):
         """Verify network connectivity."""
         try:
             yf.Ticker("AAPL").fast_info
-            self.logger.info("Connection successful")
+            self.logger.info("Connected to yfinance")
             return True
         except Exception as e:
-            self.logger.error(f"Connection failed: {e}")
+            self.logger.error(f"Failed to connect: {e}")
             return False
 
     def subscribe(self, symbols: List[str]) -> bool:
@@ -37,35 +40,25 @@ class YFinanceDataGateway(DataGateway):
         for symbol in symbols:
             if symbol not in self._symbols:
                 self._symbols.append(symbol)
-                self.logger.info(f"Subscribed to {symbol}")
                 # Perform data warm-up for new symbol
                 self._warm_up(symbol)
         return True
 
     def _warm_up(self, symbol: str) -> None:
         """Fetch and push today's historical 1m data to fill charts."""
-        self.logger.info(f"Warming up {symbol} with intraday history...")
+        self.logger.debug(f"Warming up {symbol} with intraday history...")
         try:
             # Fetch last 1 day of 1-minute data
             data = yf.download(symbol, period="1d", interval="1m", progress=False)
             if data.empty:
+                self.logger.warning(f"No warm-up data for {symbol}")
                 return
 
-            today = datetime.now().date()
             pushed_count = 0
 
             for timestamp, row in data.iterrows():
-                # 转换时区：将 yfinance 的 UTC 时间转换为本地时间
-                local_ts = timestamp.to_pydatetime()
-                if local_ts.tzinfo:
-                    local_ts = local_ts.astimezone() # 自动转换为本地时区
-                
-                # 移除时区标签以便统一处理，但此时小时数已经是本地时间了
-                local_ts = local_ts.replace(tzinfo=None)
-
-                # Only push data points for today (local time)
-                if local_ts.date() != today:
-                    continue
+                # Standardize to Naive UTC: yfinance returns UTC aware, we strip tzinfo for consistency
+                local_ts = timestamp.to_pydatetime().replace(tzinfo=None)
                 
                 price = float(row['Close'])
                 volume = int(row['Volume'])
@@ -85,7 +78,7 @@ class YFinanceDataGateway(DataGateway):
                 self._last_data[symbol] = (price, volume)
                 pushed_count += 1
                 
-            self.logger.info(f"Warm-up complete for {symbol}: {pushed_count} bars pushed")
+            self.logger.info(f"Subscribed & Warmed up {symbol} ({pushed_count} bars)")
         except Exception as e:
             self.logger.warning(f"Warm-up failed for {symbol}: {e}")
 
@@ -94,18 +87,17 @@ class YFinanceDataGateway(DataGateway):
         if self._running:
             return
         
-        self.logger.info("Starting yfinance polling thread")
+        self.logger.info("Starting yfinance polling")
         self._running = True
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
     def stop(self) -> None:
         """Stop the polling thread."""
-        self.logger.info("Stopping yfinance polling thread")
         self._running = False
         if self._thread:
             self._thread.join(timeout=2)
-        self.logger.info("Gateway stopped")
+        self.logger.info("Stopped yfinance polling")
 
     def _run(self) -> None:
         """Main loop for polling data."""
@@ -120,16 +112,13 @@ class YFinanceDataGateway(DataGateway):
                     if price is None or volume is None:
                         continue
 
-                    # Skip if data hasn't changed (deduplication)
-                    if self._last_data.get(symbol) == (price, volume):
-                        continue
-                    
+                    # Update last data for reference
                     self._last_data[symbol] = (price, volume)
 
                     tick = TickData(
                         symbol=symbol, 
                         price=float(price), 
-                        timestamp=datetime.now(), 
+                        timestamp=datetime.utcnow(), 
                         volume=int(volume), 
                         source="yfinance"
                     )
