@@ -20,18 +20,20 @@ Python 开源量化框架： 覆盖“研究、回测、交易”全生命周期
 </div>
 
 
-## 专属教程
+## 官方教程
 
-慕课网 - 程序员AI量化理财体系课：https://class.imooc.com/sale/aiqwm
+#### [慕课网 - 程序员 AI 量化理财体系课](https://class.imooc.com/sale/aiqwm)
+
+> 项目官方配套课程：深度解析本框架从 0 到 1 的架构设计，涵盖实盘闭环逻辑与工业级量化开发实战，是掌握本项目精髓的进阶必修课。
 
 
-## 安装
+## 📦 安装
 
 ```bash
 pip install deltafq
 ```
 
-## 核心功能
+## ✨ 核心功能
 
 - 📥 获取历史数据 - 默认集成免费数据源，支持全球多市场
 - 🧪 常用指标计算 - 快速计算 MACD、布林带等，内置兼容 TA-Lib
@@ -39,20 +41,16 @@ pip install deltafq
 - 📉 高性能回测 - 极速跑测，支持多策略对比与深度绩效分析
 - ⚡ 实时行情分发 - 基于事件驱动架构，实现秒级分发与 Tick 处理
 - 🤖 实盘/仿真交易 - 插件化设计，支持从模拟账户到实盘柜台无缝切换
-- 📊 交互式可视化 - 自动生成 Plotly 交互式图表，精准洞察细节
-- 📝 系统日志管理 - 统一管理运行状态，支持多级记录与文件存储
 
 
-## 接口集成
+## 🔌 接口集成
 
-DeltaFQ 通过插件化适配器（Adapters）灵活接入各类外部接口：
+- yfinance ✅ - 全球多市场历史/实时数据（美/A/港/币/基）
+- eastmoney ✅ - 场外基金全品类历史净值与基础信息
+- PaperTrade ✅ - 本地模拟交易、持仓管理与事件驱动回测
+- QMT API 🛠️ - 实盘行情快照、逐笔成交与订单执行
 
-- ✅ **yfinance** - 已接入，支持多市场历史与实时行情获取
-- ✅ **PaperTrade** - 已接入，支持多市场本地模拟交易与持仓管理
-- 🛠️ **qmt** - 计划中，支持 A 股实盘行情快照与柜台订单执行
-- 🛠️ **Tushare** - 计划中，提供更丰富的 A 股金融基础数据
-
-## 快速上手
+## ⚡ 快速上手
 
 ```python
 import deltafq as dfq
@@ -74,7 +72,7 @@ engine.show_chart(use_plotly=False)
 ```
 
 
-## 应用示例
+## 🚀 应用示例
 DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务、策略管理与交易接入，支持模拟与实盘。项目地址：https://github.com/Delta-F/deltafstation/
 
 <table align="center">
@@ -85,7 +83,7 @@ DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务
 </table>
 
 
-## 项目架构
+## 🏗️ 项目架构
 
 ```
 deltafq/
@@ -107,7 +105,7 @@ deltafq/
 </table>
 
 
-## 参与贡献
+## 🤝 参与贡献
 
 - 反馈与改进：欢迎通过 [Issue](https://github.com/Delta-F/deltafq/issues) 或 PR 提交改进。
 - 微信公众号：关注 `DeltaFQ开源量化`，获取版本更新、重要策略与量化资料。
@@ -117,6 +115,6 @@ deltafq/
 </p>
 
 
-## 许可证
+## 📄 许可证
 
 MIT License，详见 [LICENSE](LICENSE)。

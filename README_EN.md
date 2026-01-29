@@ -20,18 +20,20 @@ Python Open-source Quantitative Framework: Covering the full "Research, Backtest
 </div>
 
 
-## Exclusive Tutorials
+## 🎓 Official Tutorials
 
-iMOOC - AI Quantitative System Course: https://class.imooc.com/sale/aiqwm
+#### [iMOOC - AI Quantitative System Course](https://class.imooc.com/sale/aiqwm)
+
+> Official Course: Deeply deconstructing the framework's architecture from 0 to 1, covering live trading logic and industrial-grade quantitative development. An essential course for mastering DeltaFQ.
 
 
-## Installation
+## 📦 Installation
 
 ```bash
 pip install deltafq
 ```
 
-## Key Features
+## ✨ Key Features
 
 - 📥 Fetch Historical Data - Built-in free data sources, supporting global markets.
 - 🧪 Common Indicators - Fast calculation of MACD, Bollinger Bands, etc., with TA-Lib support.
@@ -39,20 +41,17 @@ pip install deltafq
 - 📉 High-Performance Backtesting - Rapid testing with multi-strategy comparison and performance analysis.
 - ⚡ Live Market Distribution - Event-driven architecture for second-level distribution and Tick processing.
 - 🤖 Paper & Live Trading - Pluggable design for seamless switching between simulation and live brokers.
-- 📊 Interactive Visualization - Auto-generated Plotly charts for precise insights into backtest details.
-- 📝 System Logging - Unified status management with multi-level logging and file storage.
 
 
-## Interface Integration
+## 🔌 Interface Integration
 
-DeltaFQ flexibly connects to various external interfaces through pluggable Adapters:
+- yfinance ✅ - Global historical/real-time data (US/A/HK/Crypto/Funds)
+- eastmoney ✅ - Full category OTC fund historical NAV and info
+- PaperTrade ✅ - Local simulation, position management and event-driven backtesting
+- QMT API 🛠️ - Live market snapshots, tick-by-tick data and order execution
 
-- ✅ **yfinance** - Integrated, supporting multi-market historical and real-time market data.
-- ✅ **PaperTrade** - Integrated, supporting multi-market local simulation and position management.
-- 🛠️ **qmt** - Planned, supporting A-share live market snapshots and broker execution.
-- 🛠️ **Tushare** - Planned, providing richer financial fundamental data for A-shares.
 
-## Quick Start
+## ⚡ Quick Start
 
 ```python
 import deltafq as dfq
@@ -74,7 +73,7 @@ engine.show_chart(use_plotly=False)
 ```
 
 
-## Application Example
+## 🚀 Application Example
 DeltaFStation is an open-source quantitative trading cloud platform based on deltafq, integrating data services, strategy management, and trading access with paper and live support. Project: https://github.com/Delta-F/deltafstation/
 
 <table align="center">
@@ -85,7 +84,7 @@ DeltaFStation is an open-source quantitative trading cloud platform based on del
 </table>
 
 
-## Project Architecture
+## 🏗️ Project Architecture
 
 ```
 deltafq/
@@ -107,7 +106,7 @@ deltafq/
 </table>
 
 
-## Contributing
+## 🤝 Contributing
 
 - Feedback: Contributions and bug reports are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
 - WeChat Account: Follow `DeltaFQ开源量化` for updates, strategies, and resources.
@@ -117,6 +116,6 @@ deltafq/
 </p>
 
 
-## License
+## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
