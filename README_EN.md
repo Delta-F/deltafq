@@ -35,20 +35,11 @@ pip install deltafq
 
 ## ✨ Key Features
 
-- 📥 Fetch Historical Data - Built-in free data sources, supporting global markets.
-- 🧪 Common Indicators - Fast calculation of MACD, Bollinger Bands, etc., with TA-Lib support.
-- 🧠 Fast Prototyping - Write logic in a few lines using signal generators and templates.
-- 📉 High-Performance Backtesting - Rapid testing with multi-strategy comparison and performance analysis.
-- ⚡ Live Market Distribution - Event-driven architecture for second-level distribution and Tick processing.
-- 🤖 Paper & Live Trading - Pluggable design for seamless switching between simulation and live brokers.
-
-
-## 🔌 Interface Integration
-
-- yfinance ✅ - Global historical/real-time data (US/A/HK/Crypto/Funds)
-- eastmoney ✅ - Full category OTC fund historical NAV and info
-- PaperTrade ✅ - Local simulation, position management and event-driven backtesting
-- QMT API 🛠️ - Live market snapshots, tick-by-tick data and order execution
+- 📥 Multi-source Data - Global multi-market historical/real-time data, ready to use
+- 🧠 Rapid Development - Signal-driven architecture, fast implementation with strategy templates
+- 📉 Professional Backtesting - High-performance matching engine, deep performance metrics and analysis
+- ⚡ Event-driven - Second-level market data distribution, millisecond-level Tick signal processing
+- 🤖 Live Gateway - Pluggable adapters, seamless switching between simulation and live trading
 
 
 ## ⚡ Quick Start
@@ -84,6 +75,14 @@ DeltaFStation is an open-source quantitative trading cloud platform based on del
 </table>
 
 
+## 🔌 Interface Integration
+
+- yfinance ✅ - US, A-shares, HK, Crypto, Indices
+- eastmoney ✅ - OTC Funds (Index, QDII, Stock, Bond, Mixed)
+- PaperTrade ✅ - Local simulation, position management, order management, data persistence
+- QMT API 🛠️ - Market data and live trading interfaces
+
+
 ## 🏗️ Project Architecture
 
 ```
@@ -108,8 +107,8 @@ deltafq/
 
 ## 🤝 Contributing
 
-- Feedback: Contributions and bug reports are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or PRs.
-- WeChat Account: Follow `DeltaFQ开源量化` for updates, strategies, and resources.
+- Feedback: Bug reports and contributions are welcome via [Issue](https://github.com/Delta-F/deltafq/issues) or Pull Requests.
+- WeChat Official Account: Follow `DeltaFQ开源量化` for updates, strategies, and quantitative resources.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Delta-F/deltafq/main/assets/wechat_qr.png" width="150" alt="WeChat Official Account" />
