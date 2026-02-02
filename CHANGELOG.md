@@ -2,6 +2,11 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.6.4] - 2026-02-02
+- 新增 `YFinanceDataGateway.get_today_ohlc()` 方法，支持获取当日开盘、最高、最低价格
+- 优化 yfinance 网关性能：复用 Ticker 对象缓存，减少重复创建开销
+- 更新示例：`12_yfinance_live_push.py` 添加 `get_today_ohlc` 调用示例
+
 ## [0.6.3] - 2026-01-29
 - 统一时区标准：yfinance 数据网关全面转向 Naive UTC，解决美股与加密货币跨零点数据缺失问题
 

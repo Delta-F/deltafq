@@ -42,7 +42,12 @@ def main():
     print(f"\n>>> Subscribing to {symbols} (includes historical warm-up)...")
     gateway.subscribe(symbols)
     
-    # 5. Keep main thread alive
+    # 5. Get today's OHLC (example)
+    ohlc = gateway.get_today_ohlc("GOOGL")
+    if ohlc:
+        print(f"\n>>> Today's OHLC for GOOGL: {ohlc}")
+    
+    # 6. Keep main thread alive
     try:
         while True:
             time.sleep(1)

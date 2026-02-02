@@ -21,8 +21,6 @@ class YFinanceDataGateway(DataGateway):
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._tickers: Dict[str, yf.Ticker] = {}
-        # Track last pushed data to avoid duplicates at handover
-        self._last_data: Dict[str, tuple] = {}
         self.logger.info(f"Initialized YFinanceDataGateway with interval: {self.interval}s")
 
     def connect(self) -> bool:
@@ -37,12 +35,17 @@ class YFinanceDataGateway(DataGateway):
 
     def subscribe(self, symbols: List[str]) -> bool:
         """Dynamically subscribe to a list of symbols with warm-up data."""
-        for symbol in symbols:
-            if symbol not in self._symbols:
-                self._symbols.append(symbol)
-                # Perform data warm-up for new symbol
-                self._warm_up(symbol)
+        new_symbols = [s for s in symbols if s not in self._symbols]
+        for symbol in new_symbols:
+            self._symbols.append(symbol)
+            self._warm_up(symbol)
         return True
+
+    def _get_ticker(self, symbol: str) -> yf.Ticker:
+        """Get or create Ticker object (with caching)."""
+        if symbol not in self._tickers:
+            self._tickers[symbol] = yf.Ticker(symbol)
+        return self._tickers[symbol]
 
     def _warm_up(self, symbol: str) -> None:
         """Fetch and push today's historical 1m data to fill charts."""
@@ -74,8 +77,6 @@ class YFinanceDataGateway(DataGateway):
                 if self._tick_handler:
                     self._tick_handler(tick)
                 
-                # Update last data to ensure handover to live is smooth
-                self._last_data[symbol] = (price, volume)
                 pushed_count += 1
                 
             self.logger.info(f"Subscribed & Warmed up {symbol} ({pushed_count} bars)")
@@ -97,23 +98,45 @@ class YFinanceDataGateway(DataGateway):
         self._running = False
         if self._thread:
             self._thread.join(timeout=2)
+        self._tickers.clear()  # Clean up ticker cache
         self.logger.info("Stopped yfinance polling")
+
+    def get_today_ohlc(self, symbol: str) -> Optional[Dict[str, float]]:
+        """Get today's OHLC for a given symbol."""
+        try:
+            ticker = self._get_ticker(symbol)
+            info = ticker.fast_info
+            
+            open_price = info.open
+            high_price = info.day_high
+            low_price = info.day_low
+            
+            # Check for None values
+            if open_price is None or high_price is None or low_price is None:
+                self.logger.warning(f"Incomplete OHLC data for {symbol}: open={open_price}, high={high_price}, low={low_price}")
+                return None
+            
+            return {
+                "open": open_price,
+                "high": high_price,
+                "low": low_price
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get today's OHLC for {symbol}: {e}")
+            return None
 
     def _run(self) -> None:
         """Main loop for polling data."""
         while self._running:
             for symbol in self._symbols:
                 try:
-                    ticker = yf.Ticker(symbol)
+                    ticker = self._get_ticker(symbol)
                     
                     info = ticker.fast_info
                     price = info.last_price
                     volume = info.last_volume
                     if price is None or volume is None:
                         continue
-
-                    # Update last data for reference
-                    self._last_data[symbol] = (price, volume)
 
                     tick = TickData(
                         symbol=symbol, 
@@ -122,8 +145,10 @@ class YFinanceDataGateway(DataGateway):
                         volume=int(volume), 
                         source="yfinance"
                     )
-                    self._tick_handler(tick)
+                    if self._tick_handler:
+                        self._tick_handler(tick)
                 except Exception as e:
                     self.logger.error(f"Error fetching data for {symbol}: {str(e)}")
+                    continue
 
             time.sleep(self.interval)

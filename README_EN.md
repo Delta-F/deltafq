@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.6.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.6.4-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -32,6 +32,8 @@ Python Open-source Quantitative Framework: Covering the full "Research, Backtest
 ```bash
 pip install deltafq
 ```
+
+For previous version source code, visit: https://pypi.org/project/deltafq/#history
 
 ## ✨ Key Features
 
