@@ -20,7 +20,6 @@ class YFinanceDataGateway(DataGateway):
         self._symbols: List[str] = []
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        self._tickers: Dict[str, yf.Ticker] = {}
         self.logger.info(f"Initialized YFinanceDataGateway with interval: {self.interval}s")
 
     def connect(self) -> bool:
@@ -40,12 +39,6 @@ class YFinanceDataGateway(DataGateway):
             self._symbols.append(symbol)
             self._warm_up(symbol)
         return True
-
-    def _get_ticker(self, symbol: str) -> yf.Ticker:
-        """Get or create Ticker object (with caching)."""
-        if symbol not in self._tickers:
-            self._tickers[symbol] = yf.Ticker(symbol)
-        return self._tickers[symbol]
 
     def _warm_up(self, symbol: str) -> None:
         """Fetch and push today's historical 1m data to fill charts."""
@@ -98,13 +91,12 @@ class YFinanceDataGateway(DataGateway):
         self._running = False
         if self._thread:
             self._thread.join(timeout=2)
-        self._tickers.clear()  # Clean up ticker cache
         self.logger.info("Stopped yfinance polling")
 
     def get_today_ohlc(self, symbol: str) -> Optional[Dict[str, float]]:
         """Get today's OHLC for a given symbol."""
         try:
-            ticker = self._get_ticker(symbol)
+            ticker = yf.Ticker(symbol)
             info = ticker.fast_info
             
             open_price = info.open
@@ -130,8 +122,7 @@ class YFinanceDataGateway(DataGateway):
         while self._running:
             for symbol in self._symbols:
                 try:
-                    ticker = self._get_ticker(symbol)
-                    
+                    ticker = yf.Ticker(symbol)
                     info = ticker.fast_info
                     price = info.last_price
                     volume = info.last_volume
