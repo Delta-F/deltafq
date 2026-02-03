@@ -2,12 +2,14 @@
 Trade execution engine for DeltaFQ.
 """
 
-import pandas as pd
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from datetime import datetime
 from ..core.base import BaseComponent
 from .order_manager import OrderManager
 from .position_manager import PositionManager
+
+if TYPE_CHECKING:
+    from ..live.models import TickData
 
 
 class ExecutionEngine(BaseComponent):
@@ -18,16 +20,19 @@ class ExecutionEngine(BaseComponent):
     """
     
     def __init__(self, broker=None, initial_capital: Optional[float] = None,
-                 commission: float = 0.001, **kwargs):
+                 commission: float = 0.001, match_on_tick: bool = False, **kwargs):
         """
         Initialize execution engine.
         Args:
             broker: Broker adapter for live trading. None for paper trading.
             initial_capital: Initial capital for paper trading. Defaults to 1000000.
             commission: Commission rate for paper trading. Defaults to 0.001.
+            match_on_tick: If True, paper limit orders stay pending until on_tick matches (simulation).
+                If False (default), paper orders fill at once (backtest).
         """
         super().__init__(**kwargs)
         self.broker = broker
+        self.match_on_tick = match_on_tick
         self.order_manager = OrderManager()
         self.position_manager = PositionManager()
         
@@ -89,16 +94,32 @@ class ExecutionEngine(BaseComponent):
                 
                 self.logger.info(f"Order executed - broker: {order_id} -> {broker_order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
             else:
-                self._execute_paper_trade(order_id, price, timestamp)
-                self.logger.info(f"Order executed - paper trading: {order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
+                if not self.match_on_tick:
+                    self._on_trade(order_id, price, timestamp)
+                    self.logger.info(f"Order executed - paper trading: {order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
+                else:
+                    self.logger.info(f"Order submitted (pending): {order_id}, symbol: {symbol}, price: {price}, quantity: {quantity}")
             
             return order_id
             
         except Exception as e:
             raise RuntimeError(f"Failed to execute order: {str(e)}") from e
-    
-    def _execute_paper_trade(self, order_id: str, execution_price: float, timestamp: Optional[datetime] = None):
-        """Execute paper trading with cash management."""
+
+    def on_tick(self, tick: "TickData") -> None:
+        """Match pending orders against tick (for EventEngine-driven simulation)."""
+        if not self.is_paper_trading:
+            return
+        for order in self.order_manager.get_pending_orders():
+            if order["symbol"] != tick.symbol:
+                continue
+            q, ot, p = order["quantity"], order["order_type"], order["price"]
+            match = ot == "market" or (q > 0 and tick.price <= p) or (q < 0 and tick.price >= p)
+            if match:
+                self._on_trade(order["id"], tick.price, tick.timestamp)
+                break  # one fill per tick per symbol, keep it simple
+
+    def _on_trade(self, order_id: str, execution_price: float, timestamp: Optional[datetime] = None):
+        """Unified settlement entry after a trade. Updates cash, position, order status and trade record."""
         order = self.order_manager.get_order(order_id)
         if not order:
             return

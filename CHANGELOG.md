@@ -2,6 +2,13 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.0] - 2026-02-03
+- 本地模拟交易：ExecutionEngine 支持 `match_on_tick`，限价单挂单后由 `on_tick` 按行情撮合
+- 统一成交结算入口：`_execute_paper_trade` 重命名为 `_on_trade`，负责资金与仓位更新
+- PaperTradeGateway 迁至 `paper_gateway.py`，默认 `match_on_tick=True`，与回测（立即成交）区分
+- 事件驱动示例：新增 `13_local_sim_trading.py`，EventEngine 消费行情、完全依赖 Tick 流取价与下单
+- YFinanceDataGateway 新增 `get_last_price(symbol)`，便于按网关取当前价
+
 ## [0.6.5] - 2026-02-02
 - 修复实时数据不更新问题：移除 Ticker 对象缓存，每次轮询创建新实例确保获取最新 price 和 volume
 

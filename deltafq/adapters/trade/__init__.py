@@ -1,3 +1,3 @@
-from .paper import PaperTradeGateway
+from .paper_gateway import PaperTradeGateway
 
 __all__ = ["PaperTradeGateway"]

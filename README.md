@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.6.5-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.7.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -81,7 +81,7 @@ DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务
 
 - yfinance ✅ - 美股、A股、港股、加密、股指
 - eastmoney ✅ - 场外基金（指数、QDII、股、债、混合）
-- PaperTrade ✅ - 本地模拟交易、持仓管理、订单管理、数据持久化
+- PaperTrade ✅ - 本地模拟交易、挂单按 Tick 撮合、持仓与订单管理
 - QMT API 🛠️ - 行情、实盘接口
 
 

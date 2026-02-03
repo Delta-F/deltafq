@@ -9,6 +9,7 @@ class PaperTradeGateway(TradeGateway):
             broker=None,
             initial_capital=initial_capital,
             commission=commission,
+            match_on_tick=True,
         )
 
     def connect(self) -> bool:
