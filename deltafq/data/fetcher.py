@@ -28,28 +28,25 @@ class DataFetcher(BaseComponent):
         if self.cleaner is None:
             self.cleaner = DataCleaner()
     
-    def fetch_data(self, symbol: str, start_date: str, end_date: Optional[str] = None, clean: bool = False) -> pd.DataFrame:
-        """Fetch stock data for given symbol."""
+    def fetch_data(self, symbol: str, start_date: str, end_date: Optional[str] = None, clean: bool = False,
+                   interval: str = "1d") -> pd.DataFrame:
+        """Fetch stock data. interval: e.g. '1m', '1h', '1d' (default), '1wk', '1mo'."""
         try:
-            self.logger.info(f"Fetching data for {symbol} from {start_date} to {end_date}")
-            
-            data = yf.download(symbol, start=start_date, end=end_date, progress=False)
-            data = data.droplevel(level=1, axis=1)  # Drop the multi-index level
-            
+            self.logger.info(f"Fetching data for {symbol} from {start_date} to {end_date}, interval={interval}")
+            data = yf.download(symbol, start=start_date, end=end_date, interval=interval, progress=False)
+            if isinstance(data.columns, pd.MultiIndex) and data.columns.nlevels > 1:
+                data = data.droplevel(level=1, axis=1)
             if clean:
                 self._ensure_cleaner()
                 data = self.cleaner.dropna(data)
-                
             return data
         except Exception as e:
             raise RuntimeError(f"Failed to fetch data for {symbol}: {str(e)}") from e
-    
-    def fetch_data_multiple(self, symbols: List[str], start_date: str, end_date: Optional[str] = None, clean: bool = False) -> Dict[str, pd.DataFrame]:
+
+    def fetch_data_multiple(self, symbols: List[str], start_date: str, end_date: Optional[str] = None, clean: bool = False,
+                            interval: str = "1d") -> Dict[str, pd.DataFrame]:
         """Fetch data for multiple symbols."""
-        data_dict = {}
-        for symbol in symbols:
-            data_dict[symbol] = self.fetch_data(symbol, start_date, end_date, clean)
-        return data_dict
+        return {s: self.fetch_data(s, start_date, end_date, clean, interval) for s in symbols}
     
     def fetch_fund_data(self, code: str, page: Optional[int] = None) -> pd.DataFrame:
         """Fetch fund net value data from East Money API."""

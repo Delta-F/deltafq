@@ -2,6 +2,10 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.2] - 2026-02-21
+- DataFetcher：`fetch_data` / `fetch_data_multiple` 新增参数 `interval`（默认 `"1d"`），支持多周期（如 `"1m"`、`"5m"`、`"1h"`、`"1d"`、`"1wk"`、`"1mo"`），兼容原有调用
+- 新增示例 `14_auto_trade_demo.py`：基于 DataFetcher 的策略自动化（按 interval 区分 5m/1d 等），拉数据、算信号、存盘、按信号用 ExecutionEngine 模拟交易
+
 ## [0.7.0] - 2026-02-03
 - 本地模拟交易：ExecutionEngine 支持 `match_on_tick`，限价单挂单后由 `on_tick` 按行情撮合
 - 统一成交结算入口：`_execute_paper_trade` 重命名为 `_on_trade`，负责资金与仓位更新
