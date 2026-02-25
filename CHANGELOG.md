@@ -2,6 +2,11 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.3] - 2026-02-25
+- 新增 LiveEngine：实盘/模拟入口——用实时数据跑策略并下单，串联数据网关、策略调度与交易网关，与回测同一套策略、不同引擎
+- 优化 LiveEngine：网关配置改为独立方法 `set_data_gateway(name, **params)`、`set_trade_gateway(name, **params)`，`set_parameters` 仅保留 symbol/interval/lookback_bars/signal_interval；资金与手续费由 Trade Gateway 决定，可通过 `set_trade_gateway("paper", initial_capital=..., commission=...)` 传入
+- 示例：`15_live_engine_tpl.py` 策略改为 Every5BarFlipStrategy（每 2 次运行翻转 1/-1），便于快速触发买卖、验证撮合
+
 ## [0.7.2] - 2026-02-21
 - DataFetcher：`fetch_data` / `fetch_data_multiple` 新增参数 `interval`（默认 `"1d"`），支持多周期（如 `"1m"`、`"5m"`、`"1h"`、`"1d"`、`"1wk"`、`"1mo"`），兼容原有调用
 - 新增示例 `14_auto_trade_demo.py`：基于 DataFetcher 的策略自动化（按 interval 区分 5m/1d 等），拉数据、算信号、存盘、按信号用 ExecutionEngine 模拟交易

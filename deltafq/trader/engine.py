@@ -149,6 +149,7 @@ class ExecutionEngine(BaseComponent):
                     'commission': commission_amount,
                     'cost': total_cost
                 })
+                self.logger.info(f"Fill BUY order_id={order_id} symbol={symbol} qty={quantity} price={execution_price:.2f} (tick price)")
             else:
                 self.logger.warning(f"Insufficient cash for buy: need {total_cost:.2f}, have {self.cash:.2f}")
                 self.order_manager.cancel_order(order_id)
@@ -181,6 +182,7 @@ class ExecutionEngine(BaseComponent):
                     'buy_cost': buy_cost,
                     'profit_loss': profit_loss
                 })
+                self.logger.info(f"Fill SELL order_id={order_id} symbol={symbol} qty={quantity} price={execution_price:.2f} (tick price)")
             else:
                 self.logger.warning(f"Insufficient position for sell: {symbol}, need {quantity}")
                 self.order_manager.cancel_order(order_id)
