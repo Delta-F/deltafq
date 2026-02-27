@@ -16,7 +16,30 @@ from .event_engine import EventEngine, EVENT_TICK
 from .gateway_registry import create_data_gateway, create_trade_gateway
 from .models import OrderRequest
 
+
+# Calendar days per bar by interval (for sizing fetch range). 1d: ~252 trading days / 365 calendar days.
+# Example for lookback_bars=100:
+#   signal_interval |  formula              | calendar days
+#   ----------------|----------------------|---------------
+#   1d              | 100 * (365/252) + 60 | 205
+#   1wk             | 100 * (365/52) + 60  | 762
+#   1mo             | 100 * (365/12) + 60  | 3102
+#   1m/5m/15m/1h    | max(7, min(60, 100//10)) | 10
+#   tick            | 0                       | 0
+
 _REFETCH_SEC = {"1m": 60, "5m": 300, "15m": 900, "1d": 86400}
+_FETCH_DAYS_PER_BAR = {"1d": 365 / 252, "1wk": 365 / 52, "1mo": 365 / 12}
+
+
+def _vol_str(v: float) -> str:
+    """Format volume as 41.4B, 12.3M, 1.2K or plain number."""
+    if v >= 1e9:
+        return f"{v / 1e9:.1f}B"
+    if v >= 1e6:
+        return f"{v / 1e6:.1f}M"
+    if v >= 1e3:
+        return f"{v / 1e3:.1f}K"
+    return str(int(v))
 
 
 class LiveEngine(BaseComponent):
@@ -109,10 +132,17 @@ class LiveEngine(BaseComponent):
         if self._data_fetcher is None or self.signal_interval == "tick":
             return None
         now = datetime.utcnow()
-        if self.signal_interval == "1d":
-            start = (now - timedelta(days=max(self.lookback_bars + 5, 60))).strftime("%Y-%m-%d")
+        # Request enough calendar days to cover lookback_bars. 1d: ~1.45 cal days per trading day.
+        iv = (self.signal_interval or "").lower()
+        days_per_bar = _FETCH_DAYS_PER_BAR.get(iv)
+        if days_per_bar is not None:
+            cal_days = int(self.lookback_bars * days_per_bar) + 60  # buffer for holidays/missing
+            start = (now - timedelta(days=max(cal_days, 60))).strftime("%Y-%m-%d")
         else:
-            start = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+            # Intraday (1m, 5m, 15m, 1h): 7 days usually enough; scale if lookback is large
+            start = (now - timedelta(days=max(7, min(60, self.lookback_bars // 10)))).strftime(
+                "%Y-%m-%d"
+            )
         end = now.strftime("%Y-%m-%d")
         try:
             data = self._data_fetcher.fetch_data(
@@ -121,14 +151,22 @@ class LiveEngine(BaseComponent):
         except Exception as e:
             self.logger.warning(f"DataFetcher failed: {e}")
             return None
-        if data.empty or len(data) < self.lookback_bars:
+        if data.empty:
             return None
-        return data.tail(self.lookback_bars)
+        n = min(len(data), self.lookback_bars)
+        if len(data) < self.lookback_bars:
+            self.logger.warning(
+                f"Insufficient bars: got {len(data)}, need {self.lookback_bars}; using available {n} bars"
+            )
+        return data.tail(n)
 
     def _on_tick_match(self, tick: Any) -> None:
         """Forward tick to execution engine for order matching."""
         if getattr(tick, "source", None) != "yf_warmup":
-            self.logger.info(f"tick symbol={getattr(tick, 'symbol', '')} price={getattr(tick, 'price', 0):.2f} ts={getattr(tick, 'timestamp', '')}")
+            t = tick.timestamp
+            ts = t.strftime("%H:%M:%S")
+            v = tick.volume
+            self.logger.info(f"Tick: [{tick.symbol}] {tick.price:.2f} vol={v}({_vol_str(v)}) @ {ts}")
         if self._trade_gw:
             self._trade_gw._engine.on_tick(tick)
 
@@ -183,7 +221,7 @@ class LiveEngine(BaseComponent):
         elif signal == self._last_signal:
             action = "no_change"
         self.logger.info(
-            f"signal={signal} last_signal={self._last_signal} price={px:.2f} cash={cash:.0f} position={position} -> {action}"
+            f"Signal: [{self.symbol}] [sig={signal} prev={self._last_signal}] {px:.2f} cash={cash:.0f} pos={position} -> {action}"
         )
 
         if signal == self._last_signal:

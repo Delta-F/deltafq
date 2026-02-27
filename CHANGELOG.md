@@ -2,6 +2,11 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.4] - 2026-02-27
+- LiveEngine：数据不足时使用可用 bars 替代返回 None，修复 1d 周期下每 tick 重复拉取
+- LiveEngine：按 lookback_bars 与周期（1d/1wk/1mo）计算请求日期范围，保证 bars 充足
+- 统一日志格式：Order pending/filled、Tick、Signal 采用 `Type: details` 结构，便于排查与复盘
+
 ## [0.7.3] - 2026-02-25
 - 新增 LiveEngine：实盘/模拟入口——用实时数据跑策略并下单，串联数据网关、策略调度与交易网关，与回测同一套策略、不同引擎
 - 优化 LiveEngine：网关配置改为独立方法 `set_data_gateway(name, **params)`、`set_trade_gateway(name, **params)`，`set_parameters` 仅保留 symbol/interval/lookback_bars/signal_interval；资金与手续费由 Trade Gateway 决定，可通过 `set_trade_gateway("paper", initial_capital=..., commission=...)` 传入

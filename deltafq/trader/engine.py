@@ -98,7 +98,8 @@ class ExecutionEngine(BaseComponent):
                     self._on_trade(order_id, price, timestamp)
                     self.logger.info(f"Order executed - paper trading: {order_id}, date: {timestamp.date()}, price: {price}, quantity: {quantity}")
                 else:
-                    self.logger.info(f"Order submitted (pending): {order_id}, symbol: {symbol}, price: {price}, quantity: {quantity}")
+                    side = "[SELL]" if quantity < 0 else "[BUY]"
+                    self.logger.info(f"Order pending: {order_id} {side} {symbol} qty={abs(quantity)} @ {price:.2f}")
             
             return order_id
             
@@ -149,7 +150,7 @@ class ExecutionEngine(BaseComponent):
                     'commission': commission_amount,
                     'cost': total_cost
                 })
-                self.logger.info(f"Fill BUY order_id={order_id} symbol={symbol} qty={quantity} price={execution_price:.2f} (tick price)")
+                self.logger.info(f"Order filled: {order_id} [BUY] {symbol} qty={quantity} @ {execution_price:.2f}")
             else:
                 self.logger.warning(f"Insufficient cash for buy: need {total_cost:.2f}, have {self.cash:.2f}")
                 self.order_manager.cancel_order(order_id)
@@ -182,7 +183,7 @@ class ExecutionEngine(BaseComponent):
                     'buy_cost': buy_cost,
                     'profit_loss': profit_loss
                 })
-                self.logger.info(f"Fill SELL order_id={order_id} symbol={symbol} qty={quantity} price={execution_price:.2f} (tick price)")
+                self.logger.info(f"Order filled: {order_id} [SELL] {symbol} qty={quantity} @ {execution_price:.2f}")
             else:
                 self.logger.warning(f"Insufficient position for sell: {symbol}, need {quantity}")
                 self.order_manager.cancel_order(order_id)

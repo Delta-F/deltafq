@@ -33,7 +33,7 @@ def main():
         symbol="BTC-USD",
         interval=10.0,
         lookback_bars=50,
-        signal_interval="1m",
+        signal_interval="5m",
     )
     engine.set_trade_gateway("paper", initial_capital=880_000)
     engine.add_strategy(Every2BarFlipStrategy(name="Every2Flip"))
