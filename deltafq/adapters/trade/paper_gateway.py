@@ -4,7 +4,7 @@ from ...trader.engine import ExecutionEngine
 
 
 class PaperTradeGateway(TradeGateway):
-    def __init__(self, initial_capital: float = 100000.0, commission: float = 0.001) -> None:
+    def __init__(self, initial_capital: float = 1_000_000.0, commission: float = 0.001) -> None:
         self._engine = ExecutionEngine(
             broker=None,
             initial_capital=initial_capital,
@@ -26,3 +26,6 @@ class PaperTradeGateway(TradeGateway):
 
     def cancel_order(self, order_id: str) -> bool:
         return self._engine.order_manager.cancel_order(order_id)
+
+    def stop(self) -> None:
+        pass

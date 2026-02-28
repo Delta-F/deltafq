@@ -16,7 +16,7 @@ class Logger:
         if not self.logger.handlers:
             handler = logging.StreamHandler(sys.stdout)
             formatter = logging.Formatter(
-                '[%(asctime)s] %(name)-20s >>> %(levelname)-8s >>> %(message)s',
+                '[%(asctime)s] %(levelname)-7s %(name)-20s >>> %(message)s',
                 datefmt='%H:%M:%S'
             )
             handler.setFormatter(formatter)

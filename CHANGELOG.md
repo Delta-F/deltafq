@@ -2,6 +2,15 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.5] - 2026-02-28
+- LiveEngine：缓存 K 线与信号，新增 `get_chart_data()` 供应用层直接获取图表数据，无需重复拉取或计算
+- LiveEngine：支持策略设置 `order_amount`（单次买入投入金额），策略 `self.order_amount = 10000` 即可生效，未设置则全仓
+- LiveEngine：yfinance end_date 改为次日（exclusive），修复 get_chart_data 1m 数据显示昨日的问题
+- TradeGateway：接口新增 `stop()`，Paper 实现 pass，为实盘扩展预留
+- 日志：Logger 格式简化为单 `>>>`；Signal/订单/仓位加 ASCII 图标（↑↓✓○x-），run_live 加「开始运行」前缀
+- 文档：新增 `documents/LiveEngine.md`、`documents/BacktestEngine.md` 使用说明与架构
+- 示例 `15_live_engine_tpl.py`：Plotly K 线+信号图，Trades/Orders 时间到秒、浮点两位小数
+
 ## [0.7.4] - 2026-02-27
 - LiveEngine：数据不足时使用可用 bars 替代返回 None，修复 1d 周期下每 tick 重复拉取
 - LiveEngine：按 lookback_bars 与周期（1d/1wk/1mo）计算请求日期范围，保证 bars 充足

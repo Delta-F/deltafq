@@ -42,7 +42,7 @@ class PositionManager(BaseComponent):
                 'updated_at': datetime.now()
             }
         
-        self.logger.info(f"Position updated: {symbol} -> {self.positions[symbol]['quantity']}")
+        self.logger.info(f"↑ Position updated: {symbol} -> {self.positions[symbol]['quantity']}")
         return True
     
     def reduce_position(self, symbol: str, quantity: int, price: Optional[float] = None) -> bool:
@@ -64,7 +64,7 @@ class PositionManager(BaseComponent):
             self.positions[symbol]['quantity'] = new_quantity
             self.positions[symbol]['updated_at'] = datetime.now()
         
-        self.logger.info(f"Position reduced: {symbol} -> {new_quantity}")
+        self.logger.info(f"↓ Position reduced: {symbol} -> {new_quantity}")
         return True
     
     def get_position(self, symbol: str) -> int:

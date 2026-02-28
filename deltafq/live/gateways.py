@@ -42,3 +42,8 @@ class TradeGateway(ABC):
     @abstractmethod
     def cancel_order(self, order_id: str) -> bool:
         raise NotImplementedError
+
+    @abstractmethod
+    def stop(self) -> None:
+        """Stop gateway and release resources."""
+        raise NotImplementedError

@@ -1,11 +1,18 @@
 """
 Live engine: runs strategy on real-time tick stream and sends orders via gateways.
+
+Typical usage:
+    engine = LiveEngine(symbol="BTC-USD", signal_interval="1m", lookback_bars=50)
+    engine.set_trade_gateway("paper", initial_capital=100000)
+    engine.add_strategy(MyStrategy())
+    engine.run_live()
+    # ... on KeyboardInterrupt: engine.stop()
 """
 
 import time
 from collections import deque
-from datetime import datetime, timedelta
-from typing import Optional, Any
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Any, Dict, List
 
 import pandas as pd
 
@@ -27,8 +34,10 @@ from .models import OrderRequest
 #   1m/5m/15m/1h    | max(7, min(60, 100//10)) | 10
 #   tick            | 0                       | 0
 
-_REFETCH_SEC = {"1m": 60, "5m": 300, "15m": 900, "1d": 86400}
+_REFETCH_SEC = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "1d": 86400}
 _FETCH_DAYS_PER_BAR = {"1d": 365 / 252, "1wk": 365 / 52, "1mo": 365 / 12}
+_SIG_ICON = {1: "↑", -1: "↓", 0: "-"}
+_ACTION_ICON = {"buy": "↑", "sell": "↓", "skip": "x", "no_change": "-"}
 
 
 def _vol_str(v: float) -> str:
@@ -45,7 +54,18 @@ def _vol_str(v: float) -> str:
 class LiveEngine(BaseComponent):
     """
     Runs strategy on live data and submits orders via gateways.
-    signal_interval default "5m"; "tick" = tick prices as Close; "1d"/"5m"/"15m"/"1m" = DataFetcher bars.
+
+    Args:
+        symbol: Trading symbol (e.g. "BTC-USD", "AAPL").
+        interval: Data gateway poll interval in seconds.
+        lookback_bars: Number of bars for strategy input.
+        signal_interval: Bar interval for signals - "tick" (use tick as Close),
+            "1m", "5m", "15m", "1h", "1d", "1wk", "1mo".
+        data_gateway_name: Data source (default "yfinance").
+        trade_gateway_name: Execution gateway (default "paper").
+
+    Use set_data_gateway/set_trade_gateway before run_live() to pass gateway params.
+    Strategy can set self.order_amount for fixed $ per buy; else full cash.
     """
 
     def __init__(
@@ -58,12 +78,12 @@ class LiveEngine(BaseComponent):
         trade_gateway_name: str = "paper",
         **kwargs,
     ):
-        """Initialize engine: symbol, gateway names, signal period and lookback. Use set_data_gateway/set_trade_gateway to pass gateway params (e.g. initial_capital, commission)."""
+        """Initialize engine. Call set_data_gateway/set_trade_gateway before run_live() for gateway params."""
         super().__init__(**kwargs)
         self.symbol = symbol
         self.interval = interval
         self.lookback_bars = lookback_bars
-        self.signal_interval = signal_interval
+        self.signal_interval = (signal_interval or "5m").lower()
         self.data_gateway_name = data_gateway_name
         self.trade_gateway_name = trade_gateway_name
         self._data_gateway_params: dict = {}
@@ -78,6 +98,8 @@ class LiveEngine(BaseComponent):
         self._timestamps: deque = deque(maxlen=lookback_bars + 100)
         self._last_signal = 0
         self._last_fetch_time = 0.0
+        self._cached_bars: Optional[pd.DataFrame] = None
+        self._cached_signals: Optional[pd.Series] = None
 
     def set_parameters(
         self,
@@ -114,6 +136,57 @@ class LiveEngine(BaseComponent):
         """Set the strategy used for signal generation."""
         self._strategy = strategy
 
+    def run_live(self) -> None:
+        """Connect gateways, register tick handlers, subscribe and start data stream."""
+        self._ensure_gateways()
+        if not self._trade_gw.connect() or not self._data_gw.connect():
+            raise RuntimeError("Gateway connect failed")
+
+        self._event_engine.on(EVENT_TICK, self._on_tick_match)
+        self._event_engine.on(EVENT_TICK, self._on_tick_strategy)
+        self._data_gw.set_tick_handler(lambda t: self._event_engine.emit(EVENT_TICK, t))
+
+        self._data_gw.subscribe([self.symbol])
+        self._data_gw.start()
+        self.logger.info(f"Running: {self.symbol} {self.signal_interval} lookback={self.lookback_bars}")
+
+    def stop(self) -> None:
+        """Stop gateways and release resources."""
+        if self._data_gw:
+            self._data_gw.stop()
+        if self._trade_gw:
+            self._trade_gw.stop()
+
+    def get_chart_data(self) -> Dict[str, Any]:
+        """
+        Return cached K-lines and signals for charting.
+
+        Called without re-fetching or re-calculating. Empty if no cache yet
+        (e.g. before first tick cycle).
+
+        Returns:
+            dict with keys: candles (list of {date, open, high, low, close}),
+            signals (list of int).
+        """
+        if self._cached_bars is None or self._cached_signals is None or self._cached_bars.empty:
+            return {"candles": [], "signals": []}
+
+        date_fmt = "%Y-%m-%d" if self.signal_interval == "1d" else "%Y-%m-%d %H:%M:%S"
+
+        candles: List[Dict[str, Any]] = []
+        for idx, row in self._cached_bars.iterrows():
+            c = float(row.get("Close", 0) or 0)
+            o = float(row.get("Open", c) or c)
+            h = float(row.get("High", c) or c)
+            l_ = float(row.get("Low", c) or c)
+            date_str = idx.strftime(date_fmt) if hasattr(idx, "strftime") else str(idx)[:16]
+            candles.append({"date": date_str, "open": o, "high": h, "low": l_, "close": c})
+
+        sigs = self._cached_signals.reindex(self._cached_bars.index, fill_value=0)
+        signals = [int(x) if pd.notna(x) else 0 for x in sigs]
+
+        return {"candles": candles, "signals": signals}
+
     def _ensure_gateways(self) -> None:
         """Lazy-create data gateway, trade gateway and (if not tick) DataFetcher."""
         if self.symbol is None:
@@ -131,10 +204,9 @@ class LiveEngine(BaseComponent):
         """Fetch last lookback_bars of K-line data via DataFetcher for current signal_interval."""
         if self._data_fetcher is None or self.signal_interval == "tick":
             return None
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         # Request enough calendar days to cover lookback_bars. 1d: ~1.45 cal days per trading day.
-        iv = (self.signal_interval or "").lower()
-        days_per_bar = _FETCH_DAYS_PER_BAR.get(iv)
+        days_per_bar = _FETCH_DAYS_PER_BAR.get(self.signal_interval)
         if days_per_bar is not None:
             cal_days = int(self.lookback_bars * days_per_bar) + 60  # buffer for holidays/missing
             start = (now - timedelta(days=max(cal_days, 60))).strftime("%Y-%m-%d")
@@ -143,7 +215,8 @@ class LiveEngine(BaseComponent):
             start = (now - timedelta(days=max(7, min(60, self.lookback_bars // 10)))).strftime(
                 "%Y-%m-%d"
             )
-        end = now.strftime("%Y-%m-%d")
+        # yfinance end_date is exclusive; use next day to include today
+        end = (now + timedelta(days=1)).strftime("%Y-%m-%d")
         try:
             data = self._data_fetcher.fetch_data(
                 self.symbol, start, end, clean=True, interval=self.signal_interval
@@ -204,6 +277,11 @@ class LiveEngine(BaseComponent):
 
         if signals.empty:
             return
+
+        # Cache bars and signals for chart / application consumption
+        self._cached_bars = df
+        self._cached_signals = signals
+
         signal = int(signals.iloc[-1])
         eng = self._trade_gw._engine
         px = tick.price
@@ -212,23 +290,34 @@ class LiveEngine(BaseComponent):
         commission = getattr(eng, "commission", 0.0) or 0.0
 
         # One-line summary every time we have a signal
+        action_key = "no_change"
         action = "no_change"
         if signal == 1 and self._last_signal <= 0:
-            qty = max(0, int(cash / (px * (1 + commission))))
-            action = f"BUY qty={qty}" if qty > 0 else "BUY skip (qty=0)"
+            am = getattr(self._strategy, "order_amount", None)
+            max_qty = max(0, int(cash / (px * (1 + commission))))
+            if am is not None and am > 0:
+                qty = min(max(0, int(am / (px * (1 + commission)))), max_qty)
+            else:
+                qty = max_qty
+            if qty > 0:
+                action_key, action = "buy", f"BUY qty={qty}"
+            else:
+                action_key, action = "skip", "BUY skip (qty=0)"
         elif signal == -1 and self._last_signal >= 0:
-            action = f"SELL qty={position}" if position > 0 else "SELL skip (position=0)"
-        elif signal == self._last_signal:
-            action = "no_change"
+            if position > 0:
+                action_key, action = "sell", f"SELL qty={position}"
+            else:
+                action_key, action = "skip", "SELL skip (position=0)"
+        icon = _SIG_ICON.get(signal, "?")
+        act_icon = _ACTION_ICON.get(action_key, "?")
         self.logger.info(
-            f"Signal: [{self.symbol}] [sig={signal} prev={self._last_signal}] {px:.2f} cash={cash:.0f} pos={position} -> {action}"
+            f"Signal: {icon} {signal} [{self.symbol}] {px:.2f} cash={cash:.0f} pos={position} -> {act_icon} {action}"
         )
 
         if signal == self._last_signal:
             return
 
         if signal == 1 and self._last_signal <= 0:
-            qty = max(0, int(cash / (px * (1 + commission))))
             if qty > 0:
                 req = OrderRequest(symbol=self.symbol, quantity=qty, price=px, order_type="limit")
                 self._trade_gw.send_order(req)
@@ -237,24 +326,3 @@ class LiveEngine(BaseComponent):
             self._trade_gw.send_order(req)
 
         self._last_signal = signal
-
-    def run_live(self) -> None:
-        """Connect gateways, register tick handlers, subscribe and start data stream."""
-        self._ensure_gateways()
-        if not self._trade_gw.connect() or not self._data_gw.connect():
-            raise RuntimeError("Gateway connect failed")
-
-        self._event_engine.on(EVENT_TICK, self._on_tick_match)
-        self._event_engine.on(EVENT_TICK, self._on_tick_strategy)
-        self._data_gw.set_tick_handler(lambda t: self._event_engine.emit(EVENT_TICK, t))
-
-        self._data_gw.subscribe([self.symbol])
-        self._data_gw.start()
-        self.logger.info(
-            f"LiveEngine running: symbol={self.symbol}, signal_interval={self.signal_interval}, lookback={self.lookback_bars}"
-        )
-
-    def stop(self) -> None:
-        """Stop data gateway and release resources."""
-        if self._data_gw:
-            self._data_gw.stop()

@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.7.4-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.7.5-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -97,6 +97,10 @@ deltafq/
 ├── adapters    # 行情/交易适配器（可插拔）
 ├── trader      # 交易执行与订单/持仓管理
 └── charts      # 信号、绩效图表组件
+
+documents/      # 使用说明与架构文档
+├── LiveEngine.md
+└── BacktestEngine.md
 ```
 
 <table align="center">
