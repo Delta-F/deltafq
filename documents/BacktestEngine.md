@@ -105,10 +105,10 @@ run_backtest()
 
 ## 五、执行引擎与回测差异
 
-| 模式 | ExecutionEngine | 成交方式 |
-|-----|-----------------|----------|
-| **回测** | `match_on_tick=False`（默认） | 限价单立即成交，用当日 Close 价 |
-| **实盘/模拟** | `match_on_tick=True` | 挂单等待 tick 撮合 |
+| 模式 | ExecutionEngine | 成交方式 | 撤单 |
+|-----|-----------------|----------|------|
+| **回测** | `match_on_tick=False`（默认） | 限价单立即成交，用当日 Close 价 | 无挂单，无需撤单 |
+| **实盘/模拟** | `match_on_tick=True` | 挂单等待 tick 撮合 | LiveEngine 信号反转时撤销前一挂单 |
 
 BacktestEngine 内部创建的 ExecutionEngine 未显式传 `match_on_tick`，使用默认 `False`，即回测时下单即成交。
 

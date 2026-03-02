@@ -97,6 +97,7 @@ class LiveEngine(BaseComponent):
         self._prices: deque = deque(maxlen=lookback_bars + 100)
         self._timestamps: deque = deque(maxlen=lookback_bars + 100)
         self._last_signal = 0
+        self._last_pending_order_id: Optional[str] = None
         self._last_fetch_time = 0.0
         self._cached_bars: Optional[pd.DataFrame] = None
         self._cached_signals: Optional[pd.Series] = None
@@ -317,12 +318,20 @@ class LiveEngine(BaseComponent):
         if signal == self._last_signal:
             return
 
+        # Cancel pending order when signal flips to avoid contradictory fills
+        if self._last_pending_order_id:
+            self._trade_gw.cancel_order(self._last_pending_order_id)
+            self.logger.info(f"Cancelled pending order: {self._last_pending_order_id}")
+            self._last_pending_order_id = None
+
         if signal == 1 and self._last_signal <= 0:
             if qty > 0:
                 req = OrderRequest(symbol=self.symbol, quantity=qty, price=px, order_type="limit")
-                self._trade_gw.send_order(req)
+                order_id = self._trade_gw.send_order(req)
+                self._last_pending_order_id = order_id
         elif signal == -1 and self._last_signal >= 0 and position > 0:
             req = OrderRequest(symbol=self.symbol, quantity=-position, price=px, order_type="limit")
-            self._trade_gw.send_order(req)
+            order_id = self._trade_gw.send_order(req)
+            self._last_pending_order_id = order_id
 
         self._last_signal = signal

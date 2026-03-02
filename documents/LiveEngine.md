@@ -129,8 +129,9 @@ _on_tick_strategy(tick)
   ├─ 打日志：Signal: ↑/↓  signal  [symbol] price cash pos -> action
   │
   └─ 若 signal 相对 _last_signal 变化
-        ├─ signal=1 且 _last≤0 → send_order(BUY)
-        └─ signal=-1 且 _last≥0 且 position>0 → send_order(SELL)
+        ├─ 若有 _last_pending_order_id → cancel_order（信号反转前撤销挂单，避免方向错误成交）
+        ├─ signal=1 且 _last≤0 → send_order(BUY)，记录 order_id
+        └─ signal=-1 且 _last≥0 且 position>0 → send_order(SELL)，记录 order_id
         → 更新 _last_signal
 ```
 
@@ -167,6 +168,10 @@ _on_tick_strategy(tick)
 ### 8.2 get_chart_data()
 
 `engine.get_chart_data()` 返回最近一次策略运行的 K 线和信号，供图表展示，不触发重新拉数或重新计算。
+
+### 8.3 撤单逻辑
+
+信号反转（buy↔sell）时，LiveEngine 会先调用 `cancel_order` 撤销前一挂单，再发送新单。限价单在 `match_on_tick` 模式下会挂单等待撮合，若信号快速翻转而未撤单，可能导致方向错误的成交；记录 `_last_pending_order_id` 可避免此问题。
 
 ---
 
