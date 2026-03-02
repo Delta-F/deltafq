@@ -320,8 +320,9 @@ class LiveEngine(BaseComponent):
 
         # Cancel pending order when signal flips to avoid contradictory fills
         if self._last_pending_order_id:
-            self._trade_gw.cancel_order(self._last_pending_order_id)
-            self.logger.info(f"Cancelled pending order: {self._last_pending_order_id}")
+            cancelled = self._trade_gw.cancel_order(self._last_pending_order_id)
+            if cancelled:
+                self.logger.info(f"Cancelled pending order: {self._last_pending_order_id}")
             self._last_pending_order_id = None
 
         if signal == 1 and self._last_signal <= 0:
