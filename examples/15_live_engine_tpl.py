@@ -44,40 +44,52 @@ def main():
     except KeyboardInterrupt:
         engine.stop()
 
-    # print trades and orders
     def _fmt_dt_cols(df):
         for col in df.columns:
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 df[col] = df[col].apply(lambda x: x.strftime("%Y-%m-%d %H:%M:%S") if pd.notna(x) else "")
         return df
 
+    def _print_section(title, body):
+        print(f"\n{'='*60}\n{title}\n{'='*60}\n{body}")
+
+    # 1. Trades
+    df_t = engine.get_trades_df()
+    df_t = _fmt_dt_cols(df_t.copy())
+    _print_section("Trades", df_t.to_string(float_format="%.2f"))
+
+    # 2. Orders
     eng = engine._trade_gw._engine if engine._trade_gw else None
-    if eng:
-        trades = eng.trades
-        orders = eng.order_manager.get_order_history()
-        if trades:
-            df_t = _fmt_dt_cols(pd.DataFrame(trades))
-            print("\n=== Trades (DataFrame) ===")
-            print(df_t.to_string(float_format="%.2f"))
-        if orders:
-            df_o = _fmt_dt_cols(pd.DataFrame(orders))
-            print("\n=== Orders (DataFrame) ===")
-            print(df_o.to_string(float_format="%.2f"))
+    orders = eng.order_manager.get_order_history() if eng else []
+    df_o = _fmt_dt_cols(pd.DataFrame(orders))
+    _print_section("Orders", df_o.to_string(float_format="%.2f"))
+
+    # 3. Values (equity curve)
+    values_metrics, metrics = engine.calculate_metrics()
+    df_v = values_metrics.copy()
+    if not df_v.empty and "date" not in df_v.columns:
+        df_v = df_v.reset_index()
+    df_v = _fmt_dt_cols(df_v)
+    _print_section("Values", df_v.to_string(float_format="%.2f"))
+
+    # 4. Metrics (summary)
+    lines = [f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}" for k, v in metrics.items()]
+    _print_section("Metrics", "\n".join(lines))
 
     # plot K-line & signal (Plotly)
-    chart = engine.get_chart_data()
-    if chart["candles"]:
-        import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
-        df = pd.DataFrame(chart["candles"]).set_index("date")
-        df.index = pd.to_datetime(df.index)
-        sig = pd.Series(chart["signals"], index=df.index)
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
-                            specs=[[{"type": "candlestick"}], [{"type": "scatter"}]])
-        fig.add_trace(go.Candlestick(x=df.index, open=df.open, high=df.high, low=df.low, close=df.close), row=1, col=1)
-        fig.add_trace(go.Scatter(x=sig.index, y=sig.values, mode="lines", name="Signal", line=dict(dash="dot")), row=2, col=1)
-        fig.update_layout(template="plotly_white")
-        fig.show()
+    # chart = engine.get_chart_data()
+    # if chart["candles"]:
+    #     import plotly.graph_objects as go
+    #     from plotly.subplots import make_subplots
+    #     df = pd.DataFrame(chart["candles"]).set_index("date")
+    #     df.index = pd.to_datetime(df.index)
+    #     sig = pd.Series(chart["signals"], index=df.index)
+    #     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.75, 0.25],
+    #                         specs=[[{"type": "candlestick"}], [{"type": "scatter"}]])
+    #     fig.add_trace(go.Candlestick(x=df.index, open=df.open, high=df.high, low=df.low, close=df.close), row=1, col=1)
+    #     fig.add_trace(go.Scatter(x=sig.index, y=sig.values, mode="lines", name="Signal", line=dict(dash="dot")), row=2, col=1)
+    #     fig.update_layout(template="plotly_white")
+    #     fig.show()
 
 
 if __name__ == "__main__":

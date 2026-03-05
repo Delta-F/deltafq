@@ -2,6 +2,10 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.8] - 2026-03-05
+- LiveEngine：运行中录制净值曲线（_values_records），新增 `get_trades_df()`、`get_values_df()`、`calculate_metrics()`，与 BacktestEngine 同 API，可随时计算收益、回撤、夏普等指标
+- 示例 `15_live_engine_tpl.py`：退出后打印 Trades / Orders / Values / Metrics，统一分节格式
+
 ## [0.7.7] - 2026-03-02
 - LiveEngine：仅在实际撤销挂单成功时打印 "Cancelled pending order"，避免订单已成交时误报撤单日志
 

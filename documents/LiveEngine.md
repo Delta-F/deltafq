@@ -173,6 +173,14 @@ _on_tick_strategy(tick)
 
 信号反转（buy↔sell）时，LiveEngine 会先调用 `cancel_order` 撤销前一挂单，再发送新单。限价单在 `match_on_tick` 模式下会挂单等待撮合，若信号快速翻转而未撤单，可能导致方向错误的成交；记录 `_last_pending_order_id` 可避免此问题。
 
+### 8.4 运行中指标（与回测同 API）
+
+每次策略评估（有信号时）会录制一行净值：`date`、`total_value`、`cash`、`position`、`position_value`、`daily_pnl` 等，与回测 `values_records` 结构一致。
+
+- **`get_trades_df()`**：返回成交明细 DataFrame（与 ExecutionEngine.trades 一致）。
+- **`get_values_df()`**：返回录制的净值序列 DataFrame，按 date 去重、排序。
+- **`calculate_metrics()`**：调用 PerformanceReporter，返回 `(values_metrics, metrics)`，与 BacktestEngine.calculate_metrics() 相同，可得到 total_return、max_drawdown、sharpe_ratio 等。运行中或 stop() 后均可调用。
+
 ---
 
 ## 九、收尾流程
@@ -196,3 +204,6 @@ stop()
 | `run_live()` | 启动实盘 |
 | `stop()` | 停止并释放资源 |
 | `get_chart_data()` | 获取缓存的 candles 和 signals |
+| `get_trades_df()` | 成交明细 DataFrame |
+| `get_values_df()` | 净值序列 DataFrame |
+| `calculate_metrics()` | 计算绩效指标，返回 (values_metrics, metrics) |

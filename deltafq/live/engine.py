@@ -12,10 +12,11 @@ Typical usage:
 import time
 from collections import deque
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Tuple
 
 import pandas as pd
 
+from ..backtest.performance import PerformanceReporter
 from ..core.base import BaseComponent
 from ..data import DataFetcher
 from ..strategy.base import BaseStrategy
@@ -101,6 +102,7 @@ class LiveEngine(BaseComponent):
         self._last_fetch_time = 0.0
         self._cached_bars: Optional[pd.DataFrame] = None
         self._cached_signals: Optional[pd.Series] = None
+        self._values_records: List[Dict[str, Any]] = []
 
     def set_parameters(
         self,
@@ -187,6 +189,38 @@ class LiveEngine(BaseComponent):
         signals = [int(x) if pd.notna(x) else 0 for x in sigs]
 
         return {"candles": candles, "signals": signals}
+
+    def get_trades_df(self) -> pd.DataFrame:
+        """Return trades from the trade gateway's execution engine (same structure as backtest)."""
+        if self._trade_gw is None or not hasattr(self._trade_gw, "_engine"):
+            return pd.DataFrame()
+        eng = getattr(self._trade_gw, "_engine", None)
+        if eng is None or not hasattr(eng, "trades"):
+            return pd.DataFrame()
+        return pd.DataFrame(eng.trades)
+
+    def get_values_df(self) -> pd.DataFrame:
+        """Return recorded equity curve (same shape as backtest values_df) for metrics."""
+        if not self._values_records:
+            return pd.DataFrame()
+        df = pd.DataFrame(self._values_records)
+        if "date" not in df.columns:
+            return df
+        df = df.drop_duplicates(subset=["date"], keep="last")
+        df = df.sort_values("date").reset_index(drop=True)
+        return df
+
+    def calculate_metrics(self) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """
+        Compute live metrics (return, drawdown, sharpe, etc.) from recorded trades and values.
+        Same API as BacktestEngine.calculate_metrics(). Call during or after run_live().
+        """
+        trades_df = self.get_trades_df()
+        values_df = self.get_values_df()
+        if values_df.empty:
+            return pd.DataFrame(), {}
+        reporter = PerformanceReporter()
+        return reporter.compute(self.symbol, trades_df, values_df)
 
     def _ensure_gateways(self) -> None:
         """Lazy-create data gateway, trade gateway and (if not tick) DataFetcher."""
@@ -289,6 +323,22 @@ class LiveEngine(BaseComponent):
         position = eng.position_manager.get_position(self.symbol)
         cash = eng.cash or 0.0
         commission = getattr(eng, "commission", 0.0) or 0.0
+
+        # Record equity curve for live metrics (same shape as backtest values_records)
+        position_value = position * px
+        total_value = cash + position_value
+        prev_total = self._values_records[-1]["total_value"] if self._values_records else total_value
+        daily_pnl = total_value - prev_total
+        self._values_records.append({
+            "date": tick.timestamp,
+            "signal": signal,
+            "price": px,
+            "cash": cash,
+            "position": position,
+            "position_value": position_value,
+            "total_value": total_value,
+            "daily_pnl": daily_pnl,
+        })
 
         # One-line summary every time we have a signal
         action_key = "no_change"
