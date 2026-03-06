@@ -285,7 +285,8 @@ def _calculate_trading_metrics(trades_df: pd.DataFrame, total_days: int) -> Dict
         return _EMPTY_TRADING_METRICS.copy()
 
     commission = float(trades_df.get("commission", pd.Series(dtype=float)).sum())
-    turnover = float(trades_df.get("gross_revenue", pd.Series(dtype=float)).sum())
+    # Total turnover = sum of (|quantity| * price) per trade (both buy and sell)
+    turnover = float((trades_df["quantity"].abs() * trades_df["price"]).sum()) if "quantity" in trades_df.columns and "price" in trades_df.columns else float(trades_df.get("gross_revenue", pd.Series(dtype=float)).sum())
     pnl = float(trades_df.get("profit_loss", pd.Series(dtype=float)).sum())
     divisor = total_days or 1
 

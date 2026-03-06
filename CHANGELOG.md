@@ -2,6 +2,9 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.7.9] - 2026-03-06
+- PerformanceReporter：总成交额（total_turnover）改为按每笔「|数量|×价格」汇总，买卖两侧均计入，修正原先仅统计 gross_revenue（仅卖出）导致的少计
+
 ## [0.7.8] - 2026-03-05
 - LiveEngine：运行中录制净值曲线（_values_records），新增 `get_trades_df()`、`get_values_df()`、`calculate_metrics()`，与 BacktestEngine 同 API，可随时计算收益、回撤、夏普等指标
 - 示例 `15_live_engine_tpl.py`：退出后打印 Trades / Orders / Values / Metrics，统一分节格式
