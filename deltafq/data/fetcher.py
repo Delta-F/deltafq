@@ -1,5 +1,9 @@
 """
-Data fetching interfaces for DeltaFQ.
+Data fetching for DeltaFQ.
+
+- yahoo: yfinance api
+- miniQMT: xtquant api, requires a running miniQMT terminal
+- eastmoney: eastmoney api
 """
 
 import pandas as pd
@@ -33,9 +37,14 @@ class DataFetcher(BaseComponent):
         """Fetch stock data. interval: e.g. '1m', '1h', '1d' (default), '1wk', '1mo'."""
         try:
             self.logger.info(f"Fetching data for {symbol} from {start_date} to {end_date}, interval={interval}")
-            data = yf.download(symbol, start=start_date, end=end_date, interval=interval, progress=False)
-            if isinstance(data.columns, pd.MultiIndex) and data.columns.nlevels > 1:
-                data = data.droplevel(level=1, axis=1)
+            if self.source == "miniqmt":
+                from .miniqmt_xtdata import fetch_miniqmt_bars
+
+                data = fetch_miniqmt_bars(symbol, start_date, end_date, interval=interval)
+            else:
+                data = yf.download(symbol, start=start_date, end=end_date, interval=interval, progress=False)
+                if isinstance(data.columns, pd.MultiIndex) and data.columns.nlevels > 1:
+                    data = data.droplevel(level=1, axis=1)
             if clean:
                 self._ensure_cleaner()
                 data = self.cleaner.dropna(data)

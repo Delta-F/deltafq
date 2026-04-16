@@ -19,6 +19,7 @@ import pandas as pd
 from ..backtest.performance import PerformanceReporter
 from ..core.base import BaseComponent
 from ..data import DataFetcher
+from ..data.source_map import fetcher_source_for_data_gateway
 from ..strategy.base import BaseStrategy
 from .event_engine import EventEngine, EVENT_TICK
 from .gateway_registry import create_data_gateway, create_trade_gateway
@@ -128,6 +129,7 @@ class LiveEngine(BaseComponent):
         self.data_gateway_name = name
         self._data_gateway_params = dict(params)
         self._data_gw = None
+        self._data_fetcher = None
 
     def set_trade_gateway(self, name: str, **params: Any) -> None:
         """Set trade gateway by name; params (e.g. initial_capital, commission) passed to gateway. Clears cached gateway."""
@@ -233,7 +235,8 @@ class LiveEngine(BaseComponent):
         if self._trade_gw is None:
             self._trade_gw = create_trade_gateway(self.trade_gateway_name, **self._trade_gateway_params)
         if self._data_fetcher is None and self.signal_interval != "tick":
-            self._data_fetcher = DataFetcher(source="yahoo")
+            src = fetcher_source_for_data_gateway(self.data_gateway_name)
+            self._data_fetcher = DataFetcher(source=src)
 
     def _fetch_bars(self) -> Optional[pd.DataFrame]:
         """Fetch last lookback_bars of K-line data via DataFetcher for current signal_interval."""
@@ -270,7 +273,7 @@ class LiveEngine(BaseComponent):
 
     def _on_tick_match(self, tick: Any) -> None:
         """Forward tick to execution engine for order matching."""
-        if getattr(tick, "source", None) != "yf_warmup":
+        if getattr(tick, "source", None) not in ("yf_warmup", "miniqmt_warmup"):
             t = tick.timestamp
             ts = t.strftime("%H:%M:%S")
             v = tick.volume
@@ -280,7 +283,7 @@ class LiveEngine(BaseComponent):
 
     def _on_tick_strategy(self, tick: Any) -> None:
         """Build data (tick or fetched bars), run strategy, send order on signal change."""
-        if getattr(tick, "source", None) == "yf_warmup":
+        if getattr(tick, "source", None) in ("yf_warmup", "miniqmt_warmup"):
             return
         if tick.symbol != self.symbol or self._strategy is None:
             return

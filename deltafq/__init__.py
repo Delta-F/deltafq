@@ -13,7 +13,7 @@ _version_file = Path(__file__).parent.parent / "VERSION"
 if _version_file.exists():
     __version__ = _version_file.read_text().strip()
 else:
-    __version__ = "0.5.0"
+    __version__ = "0.8.0"
 
 __author__ = "DeltaF"
 

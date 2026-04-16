@@ -2,6 +2,14 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.8.0] - 2026-04-16
+### miniQMT 数据源全链路接入
+- 新增 miniQMT 数据接入：`DataFetcher(source="miniqmt")` 支持通过 `xtquant.xtdata` 拉取历史 OHLCV（含 interval 映射与 end_date 兼容处理），并与现有 yfinance 列名对齐
+- 新增 `MiniQmtDataGateway` 并注册到 `LiveEngine` 网关体系：支持订阅、轮询实时快照、预热推送 `miniqmt_warmup`，实盘流程可直接切换 `set_data_gateway("miniqmt")`
+- LiveEngine 优化数据源联动：根据数据网关自动选择 DataFetcher source（`yfinance -> yahoo`，`miniqmt -> miniqmt`），并统一忽略 warm-up tick，避免预热数据触发策略与成交日志
+- 新增示例 `examples/16_fetch_miniqmt_data.py`，演示 miniQMT 历史数据拉取、落盘与实时行情快照
+- 依赖调整：新增 `xtquant`；`plotly` 与 `TA-Lib` 改为默认安装依赖
+
 ## [0.7.9] - 2026-03-06
 - PerformanceReporter：总成交额（total_turnover）改为按每笔「|数量|×价格」汇总，买卖两侧均计入，修正原先仅统计 gross_revenue（仅卖出）导致的少计
 
