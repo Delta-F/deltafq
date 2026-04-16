@@ -2,6 +2,9 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.8.1] - 2026-04-16
+- 文档同步：更新 README（中英文）与 LiveEngine/BacktestEngine 文档，补齐 miniQMT 接入与数据源映射说明
+
 ## [0.8.0] - 2026-04-16
 ### miniQMT 数据源全链路接入
 - 新增 miniQMT 数据接入：`DataFetcher(source="miniqmt")` 支持通过 `xtquant.xtdata` 拉取历史 OHLCV（含 interval 映射与 end_date 兼容处理），并与现有 yfinance 列名对齐

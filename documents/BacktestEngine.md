@@ -118,7 +118,7 @@ BacktestEngine 内部创建的 ExecutionEngine 未显式传 `match_on_tick`，�
 
 | 组件 | 数据来源 | 职责 |
 |-----|---------|------|
-| **DataFetcher** | yahoo / 其他 | 拉取历史 OHLC |
+| **DataFetcher** | yahoo / miniqmt / eastmoney(基金) | 拉取历史 OHLC |
 | **DataStorage** | 本地路径 | 缓存与保存回测结果 |
 | **BaseStrategy** | engine.data | `run(data)` → `generate_signals()` → signals |
 | **ExecutionEngine** | BacktestEngine 调用 | 模拟下单、持仓、资金 |

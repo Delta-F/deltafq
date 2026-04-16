@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.8.0-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.8.1-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -82,7 +82,7 @@ DeltaFStation is an open-source quantitative trading cloud platform based on del
 - yfinance ✅ - US, A-shares, HK, Crypto, Indices
 - eastmoney ✅ - OTC Funds (Index, QDII, Stock, Bond, Mixed)
 - PaperTrade ✅ - Local simulation, tick-driven order matching, position and order management
-- QMT API 🛠️ - Market data and live trading interfaces
+- miniQMT ✅ - A-share market data integration (`xtquant`, requires local miniQMT terminal)
 
 
 ## 🏗️ Project Architecture

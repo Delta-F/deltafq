@@ -33,7 +33,7 @@ engine.run_live()
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  [DataGateway]  ──Tick──► [EventEngine] ──► [LiveEngine 双 Handler]         │
-│  (YFinance)              (事件总线)           ├─ _on_tick_match ──► TradeGW  │
+│  (YFinance / miniQMT)    (事件总线)           ├─ _on_tick_match ──► TradeGW  │
 │  poll/推送                                    └─ _on_tick_strategy           │
 │       │                                                     │               │
 │       │                                                     ▼               │
@@ -69,9 +69,10 @@ engine.run_live()
 run_live()
   │
   ├─► _ensure_gateways()
-  │     ├─ create_data_gateway("yfinance") → YFinanceDataGateway
+  │     ├─ create_data_gateway(data_gateway_name)
   │     ├─ create_trade_gateway("paper")   → PaperTradeGateway (内嵌 ExecutionEngine)
-  │     └─ DataFetcher(source="yahoo")     # 非 tick 模式时用于 fetch K 线
+  │     └─ DataFetcher(source=fetcher_source_for_data_gateway(data_gateway_name))
+  │                                  # 非 tick 模式时用于 fetch K 线
   │
   ├─► trade_gw.connect() / data_gw.connect()
   │
@@ -84,9 +85,11 @@ run_live()
   │
   ├─► data_gw.subscribe([symbol])
   │     # YFinance: _warm_up 拉历史 1m 数据，逐条以 source="yf_warmup" 推送
+  │     # miniQMT: _warm_up 拉历史 1m 数据，逐条以 source="miniqmt_warmup" 推送
   │
   └─► data_gw.start()
         # YFinance: 后台线程按 interval 轮询 fast_info，推送 source="yfinance" tick
+        # miniQMT: 后台线程按 interval 轮询 full tick，推送 source="miniqmt" tick
 ```
 
 ---
@@ -101,7 +104,7 @@ run_live()
 Tick → EventEngine.emit(EVENT_TICK, tick)
          │
          └─► _on_tick_match(tick)
-               ├─ source != "yf_warmup" → 打日志 (symbol, price, vol, time)
+              ├─ source 不在 {"yf_warmup","miniqmt_warmup"} → 打日志
                └─ trade_gw._engine.on_tick(tick)  # ExecutionEngine 撮合挂单
 ```
 
@@ -110,7 +113,7 @@ Tick → EventEngine.emit(EVENT_TICK, tick)
 ```
 _on_tick_strategy(tick)
   │
-  ├─ source == "yf_warmup" ? → return  # 预热数据不参与策略
+  ├─ source in {"yf_warmup","miniqmt_warmup"} ? → return  # 预热数据不参与策略
   ├─ symbol 不匹配 / 无策略 ? → return
   │
   ├─ 构建策略输入数据 (df)
@@ -119,7 +122,7 @@ _on_tick_strategy(tick)
   │     │
   │     └─ signal_interval in ["1m","5m",...]
   │           ├─ 节流：距上次 fetch 不足 refetch_sec → return
-  │           └─ _fetch_bars() → DataFetcher(yahoo) 拉最近 lookback_bars 根 K 线
+  │           └─ _fetch_bars() → DataFetcher(mapped source) 拉最近 lookback_bars 根 K 线
   │
   ├─ strategy.generate_signals(df) → signals
   ├─ 缓存 _cached_bars, _cached_signals（供 get_chart_data）
@@ -142,7 +145,8 @@ _on_tick_strategy(tick)
 | 组件 | 数据来源 | 职责 |
 |-----|---------|------|
 | **YFinanceDataGateway** | yfinance `fast_info` 轮询 + warm-up 1m 历史 | 产生 Tick，推入 EventEngine |
-| **DataFetcher** | yfinance `download` | 拉 K 线供策略使用（非 tick 模式） |
+| **MiniQmtDataGateway** | xtquant `get_full_tick` 轮询 + warm-up 1m 历史 | 产生 Tick，推入 EventEngine |
+| **DataFetcher** | yfinance `download` / xtquant `xtdata` | 拉 K 线供策略使用（非 tick 模式） |
 | **EventEngine** | DataGateway 的 tick_handler | 事件分发，保证 match 先于 strategy |
 | **BaseStrategy** | LiveEngine 传入的 df | `generate_signals(df)` 输出 1/-1/0 |
 | **PaperTradeGateway** | LiveEngine 的 OrderRequest | `send_order` → ExecutionEngine |
