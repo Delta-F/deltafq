@@ -6,7 +6,7 @@ from .event_engine import EventEngine
 from .models import TickData, OrderRequest
 from .gateways import DataGateway, TradeGateway
 from ..adapters.data import YFinanceDataGateway
-from ..adapters.trade import PaperTradeGateway
+from ..adapters.trade import MiniQmtTradeGateway, MiniQmtXtTraderClient, PaperTradeGateway
 from .gateway_registry import DATA_GATEWAYS, TRADE_GATEWAYS, create_data_gateway, create_trade_gateway
 from .engine import LiveEngine
 
@@ -18,6 +18,8 @@ __all__ = [
     "DataGateway",
     "TradeGateway",
     "YFinanceDataGateway",
+    "MiniQmtTradeGateway",
+    "MiniQmtXtTraderClient",
     "PaperTradeGateway",
     "DATA_GATEWAYS",
     "TRADE_GATEWAYS",

@@ -150,6 +150,7 @@ _on_tick_strategy(tick)
 | **EventEngine** | DataGateway 的 tick_handler | 事件分发，保证 match 先于 strategy |
 | **BaseStrategy** | LiveEngine 传入的 df | `generate_signals(df)` 输出 1/-1/0 |
 | **PaperTradeGateway** | LiveEngine 的 OrderRequest | `send_order` → ExecutionEngine |
+| **MiniQmtTradeGateway** | LiveEngine 的 OrderRequest | 透传到 miniQMT 柜台（限价下单/撤单） |
 | **ExecutionEngine** | Tick + 挂单 | `on_tick` 撮合、更新持仓与资金 |
 
 ---
@@ -197,7 +198,36 @@ stop()
 
 ---
 
-## 十、API 速查
+## 十、miniQMT 实盘网关接入
+
+### 10.1 前置条件
+
+- 本机启动 miniQMT 终端
+- Python 环境已安装并可导入 `xtquant`
+- 配置 `QMT_USERDATA_MINI` 与 `QMT_ACCOUNT_ID`（或在代码中显式传参）
+
+### 10.2 代码示例
+
+```python
+engine = LiveEngine(symbol="000001.SZ", signal_interval="1m")
+engine.set_data_gateway("miniqmt", interval=3.0, mode="poll")
+engine.set_trade_gateway(
+    "miniqmt",
+    userdata_mini_path=r"D:\券商QMT\userdata_mini",
+    account_id="1234567890",
+    lot_size=100,
+)
+```
+
+### 10.3 当前约束
+
+- 当前仅支持 `order_type="limit"`
+- 下单数量按 `lot_size` 对齐（默认 100 股）
+- 撤单优先按本地委托号，失败时回退到合同号撤单
+
+---
+
+## 十一、API 速查
 
 | 方法 | 说明 |
 |-----|------|

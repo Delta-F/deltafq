@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.8.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.9.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -79,10 +79,27 @@ DeltaFStation is an open-source quantitative trading cloud platform based on del
 
 ## 🔌 Interface Integration
 
-- yfinance ✅ - US, A-shares, HK, Crypto, Indices
-- eastmoney ✅ - OTC Funds (Index, QDII, Stock, Bond, Mixed)
-- PaperTrade ✅ - Local simulation, tick-driven order matching, position and order management
-- miniQMT ✅ - A-share market data integration (`xtquant`, requires local miniQMT terminal)
+- [Data] yfinance ✅ - US, A-shares, HK, Crypto, Indices
+- [Data] eastmoney ✅ - OTC Funds (Index, QDII, Stock, Bond, Mixed)
+- [Data] miniQMT ✅ - A-share market data integration (see live trading section in the course)
+- [Trade] PaperTrade ✅ - Local simulation, tick-driven order matching, position and order management
+- [Trade] miniQMT Trade ✅ - A-share live trading (see live trading section in the course)
+
+### Minimal miniQMT live trade setup
+
+```python
+from deltafq.live import LiveEngine
+
+engine = LiveEngine(symbol="000001.SZ", signal_interval="1m")
+engine.set_data_gateway("miniqmt", interval=3.0, mode="poll")
+engine.set_trade_gateway(
+    "miniqmt",
+    userdata_mini_path=r"D:\BrokerQMT\userdata_mini",
+    account_id="1234567890",
+)
+```
+
+See details: `documents/MiniQmtTrade.md`
 
 
 ## 🏗️ Project Architecture
@@ -100,6 +117,7 @@ deltafq/
 
 documents/      # Usage guides and architecture docs
 ├── LiveEngine.md
+├── MiniQmtTrade.md
 └── BacktestEngine.md
 ```
 

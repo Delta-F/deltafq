@@ -2,7 +2,7 @@ from typing import Any, Dict, Type
 
 from .gateways import DataGateway, TradeGateway
 from ..adapters.data import MiniQmtDataGateway, YFinanceDataGateway
-from ..adapters.trade import PaperTradeGateway
+from ..adapters.trade import MiniQmtTradeGateway, PaperTradeGateway
 
 DATA_GATEWAYS: Dict[str, Type[DataGateway]] = {
     "yfinance": YFinanceDataGateway,
@@ -11,6 +11,7 @@ DATA_GATEWAYS: Dict[str, Type[DataGateway]] = {
 
 TRADE_GATEWAYS: Dict[str, Type[TradeGateway]] = {
     "paper": PaperTradeGateway,
+    "miniqmt": MiniQmtTradeGateway,
 }
 
 

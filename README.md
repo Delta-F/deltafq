@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.8.3-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-0.9.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -79,10 +79,27 @@ DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务
 
 ## 🔌 接口集成
 
-- yfinance ✅ - 美股、A股、港股、加密、股指
-- eastmoney ✅ - 场外基金（指数、QDII、股、债、混合）
-- PaperTrade ✅ - 本地模拟交易、挂单按 Tick 撮合、持仓与订单管理
-- miniQMT ✅ - A 股行情接入（`xtquant`，需本地 miniQMT 终端运行）
+- [Data] yfinance ✅ - 美股、A股、港股、加密、股指
+- [Data] eastmoney ✅ - 场外基金（指数、QDII、股、债、混合）
+- [Data] miniQMT ✅ - A 股行情接入（详情见课程实盘章节）
+- [Trade] PaperTrade ✅ - 本地模拟交易、挂单按 Tick 撮合、持仓与订单管理
+- [Trade] miniQMT Trade ✅ - A 股实盘交易（详情见课程实盘章节）
+
+### miniQMT 实盘接口最小接入
+
+```python
+from deltafq.live import LiveEngine
+
+engine = LiveEngine(symbol="000001.SZ", signal_interval="1m")
+engine.set_data_gateway("miniqmt", interval=3.0, mode="poll")
+engine.set_trade_gateway(
+    "miniqmt",
+    userdata_mini_path=r"D:\券商QMT\userdata_mini",
+    account_id="1234567890",
+)
+```
+
+详细说明见：`documents/MiniQmtTrade.md`
 
 
 ## 🏗️ 项目架构
@@ -100,6 +117,7 @@ deltafq/
 
 documents/      # 使用说明与架构文档
 ├── LiveEngine.md
+├── MiniQmtTrade.md
 └── BacktestEngine.md
 ```
 

@@ -2,28 +2,33 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
-## [0.8.3] - 2026-04-17
-### miniQMT 数据网关
-- `MiniQmtDataGateway` 新增 `mode` 参数：`poll`（默认，`get_full_tick` 轮询）与 `push`（`subscribe_quote` + `xtdata.run()`）；行情时间戳从字段解析（毫秒/秒兼容），推送模式停止时 `unsubscribe_quote` 并尝试调用 `xtdata.stop()` 清理
+## [0.9.0] - 2026-04-17
+### miniQMT 交易接入
+- 交易客户端：新增 `MiniQmtXtTraderClient`，支持连接、下单、撤单、账户/持仓/委托/成交查询
+- 交易网关：新增 `MiniQmtTradeGateway`，支持限价单、`lot_size` 对齐与撤单回退
+- 注册导出：`TRADE_GATEWAYS` 注册 `miniqmt`，并在 `deltafq.live` 与 `deltafq.adapters.trade` 导出
+- 示例 `18_miniqmt_trade_demo.py`：新增 miniQMT 实盘连接、查询、限价下单与批量撤单演示
 
-### 示例
-- `examples/17_qmt_tick_push.py` 更名为 `examples/17_miniqmt_live_push.py`，演示 push 模式分笔订阅
-- `examples/16_fetch_miniqmt_data.py` 简化为历史 K 线拉取与落盘
-- `examples/01_fetch_yahoo_data.py` 补充可选 HTTP/HTTPS 代理注释（缓解 Yahoo 限流或访问失败）
+## [0.8.3] - 2026-04-17
+### miniQMT 数据接入
+- 数据网关：`MiniQmtDataGateway` 新增 `mode`（`poll` / `push`）与推送清理逻辑
+- 示例 `17_miniqmt_live_push.py`：由 `17_qmt_tick_push.py` 更名，演示 miniQMT push 模式分笔订阅
+- 示例 `16_fetch_miniqmt_data.py`：简化为历史 K 线拉取与落盘
+- 示例 `01_fetch_yahoo_data.py`：补充可选 HTTP/HTTPS 代理说明
 
 ## [0.8.2] - 2026-04-17
 - pandas 兼容：`DataCleaner` 与绩效图基准序列不再使用已弃用的 `fillna(method=...)`，改为 `ffill()` / `bfill()`
-- 新增示例 `examples/17_miniqmt_live_push.py`：miniQMT 分笔行情 `subscribe_quote` 推送（需本机 miniQMT 与 `xtquant`）
+- 示例 `17_miniqmt_live_push.py`：新增 miniQMT 分笔行情 `subscribe_quote` 推送演示
 
 ## [0.8.1] - 2026-04-16
 - 文档同步：更新 README（中英文）与 LiveEngine/BacktestEngine 文档，补齐 miniQMT 接入与数据源映射说明
 
 ## [0.8.0] - 2026-04-16
 ### miniQMT 数据源全链路接入
-- 新增 miniQMT 数据接入：`DataFetcher(source="miniqmt")` 支持通过 `xtquant.xtdata` 拉取历史 OHLCV（含 interval 映射与 end_date 兼容处理），并与现有 yfinance 列名对齐
-- 新增 `MiniQmtDataGateway` 并注册到 `LiveEngine` 网关体系：支持订阅、轮询实时快照、预热推送 `miniqmt_warmup`，实盘流程可直接切换 `set_data_gateway("miniqmt")`
-- LiveEngine 优化数据源联动：根据数据网关自动选择 DataFetcher source（`yfinance -> yahoo`，`miniqmt -> miniqmt`），并统一忽略 warm-up tick，避免预热数据触发策略与成交日志
-- 新增示例 `examples/16_fetch_miniqmt_data.py`，演示 miniQMT 历史数据拉取、落盘与实时行情快照
+- 数据接入：`DataFetcher(source="miniqmt")` 支持通过 `xtquant.xtdata` 拉取历史 OHLCV，并对齐 yfinance 列名
+- 数据网关：新增 `MiniQmtDataGateway` 并注册到 `LiveEngine`，支持订阅、轮询快照与 `miniqmt_warmup` 预热推送
+- 引擎联动：`LiveEngine` 按网关自动映射 DataFetcher source，并忽略 warm-up tick 防止误触发策略
+- 示例 `16_fetch_miniqmt_data.py`：新增 miniQMT 历史数据拉取、落盘与实时快照演示
 - 依赖调整：新增 `xtquant`；`plotly` 与 `TA-Lib` 改为默认安装依赖
 
 ## [0.7.9] - 2026-03-06
