@@ -11,6 +11,10 @@ if str(project_root) not in sys.path:
 
 from deltafq.data import DataFetcher
 
+# 国内用户如遇到 too many requests 或 possibly delisted 错误，需使用代理设置
+# proxy = 'http://127.0.0.1:7897' # 具体端口号请查看vpn代理软件
+# os.environ['HTTP_PROXY'] = proxy 
+# os.environ['HTTPS_PROXY'] = proxy
 
 def main() -> None:
     fetcher = DataFetcher() # default source="yahoo"
