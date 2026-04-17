@@ -26,9 +26,9 @@ class DataCleaner(BaseComponent):
         na_count_before = data.isna().sum().sum()
         
         if method == "forward":
-            filled_data = data.fillna(method='ffill')
+            filled_data = data.ffill()
         elif method == "backward":
-            filled_data = data.fillna(method='bfill')
+            filled_data = data.bfill()
         else:
             filled_data = data.fillna(0)
         

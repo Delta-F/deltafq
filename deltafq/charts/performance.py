@@ -68,7 +68,7 @@ class PerformanceChart(BaseComponent):
         if benchmark_close is not None:
             bench_series = pd.Series(benchmark_close).astype(float)
             bench_series.index = pd.to_datetime(bench_series.index)
-            bench_series = bench_series.sort_index().reindex(df.index).fillna(method="ffill").dropna()
+            bench_series = bench_series.sort_index().reindex(df.index).ffill().dropna()
             if not bench_series.empty:
                 bench_returns = bench_series.pct_change().fillna(0.0)
                 bench_nv = (1 + bench_returns).cumprod()

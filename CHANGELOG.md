@@ -2,6 +2,10 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.8.2] - 2026-04-17
+- pandas 兼容：`DataCleaner` 与绩效图基准序列不再使用已弃用的 `fillna(method=...)`，改为 `ffill()` / `bfill()`
+- 新增示例 `examples/17_qmt_tick_push.py`：miniQMT 分笔行情 `subscribe_quote` 推送（需本机 miniQMT 与 `xtquant`）
+
 ## [0.8.1] - 2026-04-16
 - 文档同步：更新 README（中英文）与 LiveEngine/BacktestEngine 文档，补齐 miniQMT 接入与数据源映射说明
 
