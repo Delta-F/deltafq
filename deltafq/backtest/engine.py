@@ -49,10 +49,10 @@ class BacktestEngine(BaseComponent, ABC):
         self.trades_df = pd.DataFrame()
         self.values_df = pd.DataFrame()
         
-    def set_parameters(self, symbol: str, start_date: str, end_date: Optional[str] = None, benchmark: Optional[str] = None, 
-                      data_source: Optional[str] = "yahoo", initial_capital: Optional[float] = 1000000, 
+    def set_parameters(self, symbol: str, start_date: str, end_date: Optional[str] = None, benchmark: Optional[str] = None,
+                      data_source: Optional[str] = None, initial_capital: Optional[float] = 1000000,
                       commission: Optional[float] = 0.001, slippage: Optional[float] = 0.001) -> None:
-        """Set backtest parameters."""
+        """Set backtest parameters. If ``data_source`` is omitted, keep the source from ``BacktestEngine(..., data_source=...)``."""
         self.symbol = symbol
         self.start_date = start_date
         self.end_date = end_date

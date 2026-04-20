@@ -2,6 +2,9 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [0.9.1] - 2026-04-20
+- `BacktestEngine.set_parameters`：`data_source` 未传入时不再默认 `"yahoo"`，保留 `BacktestEngine(..., data_source=...)` 构造时已选数据源，避免 Yahoo 与 miniQMT 混用时被静默切回 yfinance
+
 ## [0.9.0] - 2026-04-17
 ### miniQMT 交易接入
 - 交易客户端：新增 `MiniQmtXtTraderClient`，支持连接、下单、撤单、账户/持仓/委托/成交查询
