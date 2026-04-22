@@ -86,3 +86,25 @@ engine.set_trade_gateway(
 - 连接与账号查询
 - 读取最新价后发限价单
 - 查询可撤委托并批量撤单
+
+---
+
+## 八、委托状态 order_status
+
+`query_stock_orders` 等返回的委托对象上常见字段 `order_status`，取值与 `xtquant.xtconstant` 中枚举一致（以下为官方文档常用对照，便于对账与判断终态）。
+
+| 枚举变量名 | 值 | 含义 |
+| :--- | :---: | :--- |
+| `xtconstant.ORDER_UNREPORTED` | 48 | 未报 |
+| `xtconstant.ORDER_WAIT_REPORTING` | 49 | 待报 |
+| `xtconstant.ORDER_REPORTED` | 50 | 已报 |
+| `xtconstant.ORDER_REPORTED_CANCEL` | 51 | 已报待撤 |
+| `xtconstant.ORDER_PARTSUCC_CANCEL` | 52 | 部成待撤 |
+| `xtconstant.ORDER_PART_CANCEL` | 53 | 部撤（部分成交，剩余已撤） |
+| `xtconstant.ORDER_CANCELED` | 54 | 已撤 |
+| `xtconstant.ORDER_PART_SUCC` | 55 | 部成（部分成交，剩余待成交） |
+| `xtconstant.ORDER_SUCCEEDED` | 56 | 已成 |
+| `xtconstant.ORDER_JUNK` | 57 | 废单 |
+| `xtconstant.ORDER_UNKNOWN` | 255 | 未知 |
+
+**用途简述**：判断是否需要再发撤单（例如已成 `56` 则不必撤）、区分废单与已撤、与 miniQMT 客户端委托列表核对。`LiveEngine` 当前仍以撤单接口返回码与本地 `_last_pending_order_id` 为主，若要做严谨终态同步，可基于上表轮询 `query_stock_orders`。

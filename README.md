@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.9.1-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -99,26 +99,59 @@ engine.set_trade_gateway(
 )
 ```
 
-详细说明见：`documents/MiniQmtTrade.md`
+详细说明见：
+- `documents/LiveEngine.md`
+- `documents/MiniQmtTrade.md`
+- `documents/MiniQmtLiveEngineRun.md`
 
 
 ## 🏗️ 项目架构
 
 ```
 deltafq/
-├── data        # 数据获取、清洗、存储接口（支持股票、基金数据）
-├── indicators  # 技术指标与因子计算
-├── strategy    # 信号生成器与策略基类
-├── backtest    # 回测执行、绩效度量、报告
-├── live        # 事件引擎、网关抽象与路由
-├── adapters    # 行情/交易适配器（可插拔）
-├── trader      # 交易执行与订单/持仓管理
-└── charts      # 信号、绩效图表组件
-
-documents/      # 使用说明与架构文档
-├── LiveEngine.md
-├── MiniQmtTrade.md
-└── BacktestEngine.md
+├── core/                          # 基类、配置、日志
+│   ├── base.py
+│   ├── config.py
+│   └── logger.py
+├── data/                          # 拉数、清洗、存储与数据源映射
+│   ├── fetcher.py
+│   ├── cleaner.py
+│   ├── storage.py
+│   ├── source_map.py
+│   └── miniqmt_xtdata.py          # miniQMT / xtquant 历史 K 线
+├── indicators/                    # 技术指标与基本面因子
+│   ├── technical.py
+│   ├── fundamental.py
+│   └── talib_indicators.py
+├── strategy/                      # 策略基类与信号生成
+│   ├── base.py
+│   └── signals.py
+├── backtest/                      # 回测引擎、指标与报告
+│   ├── engine.py
+│   ├── metrics.py
+│   └── performance.py
+├── live/                          # 事件引擎、网关抽象、LiveEngine
+│   ├── event_engine.py
+│   ├── gateways.py                # DataGateway / TradeGateway 抽象
+│   ├── gateway_registry.py        # 网关工厂与注册
+│   ├── engine.py                  # LiveEngine 实盘编排
+│   └── models.py                  # TickData、OrderRequest 等
+├── adapters/                      # 可插拔行情 / 交易适配
+│   ├── data/                      # 数据网关（yfinance、miniQMT 等）
+│   │   ├── yfinance_gateway.py
+│   │   └── miniqmt_gateway.py
+│   └── trade/                     # 交易网关（Paper、miniQMT 等）
+│       ├── paper_gateway.py
+│       ├── miniqmt_client.py      # xttrader 交易封装
+│       └── miniqmt_gateway.py     # 柜台限价单 / 撤单适配 LiveEngine
+├── trader/                        # 撮合执行、订单与持仓
+│   ├── engine.py
+│   ├── order_manager.py
+│   └── position_manager.py
+└── charts/                        # 信号、价格与绩效图
+    ├── signals.py
+    ├── price.py
+    └── performance.py
 ```
 
 <table align="center">

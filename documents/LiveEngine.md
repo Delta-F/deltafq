@@ -105,7 +105,8 @@ Tick → EventEngine.emit(EVENT_TICK, tick)
          │
          └─► _on_tick_match(tick)
               ├─ source 不在 {"yf_warmup","miniqmt_warmup"} → 打日志
-               └─ trade_gw._engine.on_tick(tick)  # ExecutionEngine 撮合挂单
+              └─ 若 trade_gw 含 _engine（paper）→ _engine.on_tick(tick)  # 本地限价撮合
+                 （miniqmt 交易网关无 _engine，不在此撮合）
 ```
 
 ### 5.2 _on_tick_strategy（策略与下单）
@@ -149,8 +150,8 @@ _on_tick_strategy(tick)
 | **DataFetcher** | yfinance `download` / xtquant `xtdata` | 拉 K 线供策略使用（非 tick 模式） |
 | **EventEngine** | DataGateway 的 tick_handler | 事件分发，保证 match 先于 strategy |
 | **BaseStrategy** | LiveEngine 传入的 df | `generate_signals(df)` 输出 1/-1/0 |
-| **PaperTradeGateway** | LiveEngine 的 OrderRequest | `send_order` → ExecutionEngine |
-| **MiniQmtTradeGateway** | LiveEngine 的 OrderRequest | 透传到 miniQMT 柜台（限价下单/撤单） |
+| **PaperTradeGateway** | LiveEngine 的 OrderRequest | `send_order` → ExecutionEngine；`_on_tick_match` 撮合挂单 |
+| **MiniQmtTradeGateway** | LiveEngine 的 OrderRequest | 透传到 miniQMT 柜台（限价下单/撤单）；资金/持仓由 `LiveEngine._account_snapshot` 读 `client` |
 | **ExecutionEngine** | Tick + 挂单 | `on_tick` 撮合、更新持仓与资金 |
 
 ---
@@ -168,17 +169,21 @@ _on_tick_strategy(tick)
 
 ### 8.1 order_amount（策略层）
 
-策略可设置 `self.order_amount = 10000`，指定单次买入投入金额（美元）；未设置则按全仓计算。
+策略可设置 `self.order_amount = 10000`，指定单次买入投入金额（与账户币种一致）；未设置则买入按可用资金全仓可买。若同时设置了 `order_quantity`，买入股数以 `order_quantity` 为准。
 
-### 8.2 get_chart_data()
+### 8.2 order_quantity（策略层）
+
+策略可设置 `self.order_quantity = 100`（正整数，单位：股），则单次买入为 `min(order_quantity, 资金可买上限)`，单次卖出为 `min(order_quantity, 当前持仓可用数量)`，买卖统一股数上限。未设置时卖出为全仓可用；买入规则见 8.1。
+
+### 8.3 get_chart_data()
 
 `engine.get_chart_data()` 返回最近一次策略运行的 K 线和信号，供图表展示，不触发重新拉数或重新计算。
 
-### 8.3 撤单逻辑
+### 8.4 撤单逻辑
 
-信号反转（buy↔sell）时，LiveEngine 会先调用 `cancel_order` 撤销前一挂单，再发送新单。限价单在 `match_on_tick` 模式下会挂单等待撮合，若信号快速翻转而未撤单，可能导致方向错误的成交；记录 `_last_pending_order_id` 可避免此问题。
+信号反转（buy↔sell）时，LiveEngine 会先处理上一笔 `_last_pending_order_id`：**若检测到委托已终态**（paper：`executed` / `cancelled`；miniQMT：`order_status` 为部撤/已撤/已成/废单，或当日查询列表中已无该 `order_id`），则**不再调用撤单**，仅清空本地 pending；否则调用 `cancel_order`。限价单在 `match_on_tick` 模式下会挂单等待撮合，若信号快速翻转而未撤单，可能导致方向错误的成交；记录 `_last_pending_order_id` 可避免此问题。
 
-### 8.4 运行中指标（与回测同 API）
+### 8.5 运行中指标（与回测同 API）
 
 每次策略评估（有信号时）会录制一行净值：`date`、`total_value`、`cash`、`position`、`position_value`、`daily_pnl` 等，与回测 `values_records` 结构一致。
 

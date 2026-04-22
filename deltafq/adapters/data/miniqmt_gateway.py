@@ -1,3 +1,24 @@
+"""
+miniQMT 行情（xtdata），类 MiniQmtDataGateway。
+
+对外
+    connect              加载 xtdata，需 miniQMT 已开
+    get_full_tick_dict   单次全快照 dict，可不先 start
+    subscribe            追加标的并 1m 暖机回放
+    start                开 daemon：poll 轮询或 push 订分笔
+    stop                 停线程，push 会退订
+    get_today_ohlc       当日开高低（从快照解析）
+
+私有
+    _warm_up             近一日 1m 合成暖机 tick
+    _unsubscribe_push    push 停时退订
+    _run_poll            按间隔拉全快照轮询
+    _run_push            订分笔并阻塞 run
+    _on_push_datas       分笔回调里组 TickData
+    _get_full_tick       封装 get_full_tick
+    _bid_ask_from_dict   快照 dict 取买一卖一
+    _ts_from_millis_or_now  行情时间转 datetime
+"""
 import threading
 import time
 from datetime import datetime, timedelta
@@ -8,27 +29,8 @@ from ...live.gateways import DataGateway
 from ...live.models import TickData
 
 
-def _get_full_tick(symbol: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Snapshot via ``xtdata.get_full_tick`` (poll mode)."""
-    try:
-        xtdata = _import_xtdata()
-        data = xtdata.get_full_tick([symbol])
-        if not data or symbol not in data:
-            return None, f"No tick for {symbol}"
-        return data[symbol], None
-    except Exception as e:
-        return None, str(e)
-
-
 class MiniQmtDataGateway(DataGateway):
-    """
-    Market data via miniQMT (xtquant ``xtdata``).
-
-    - ``mode="poll"``: ``get_full_tick`` on an interval (same idea as yfinance polling).
-    - ``mode="push"``: ``subscribe_quote`` + ``xtdata.run()`` in a daemon thread (finer ticks when market is open).
-
-    Symbols: xt-style codes, e.g. ``000001.SZ``, ``600000.SH``.
-    """
+    """poll 定时拉全快照，push 订分笔推送；xt 标的代码，Tick 含最新价及可选买卖盘。"""
 
     def __init__(
         self,
@@ -37,6 +39,7 @@ class MiniQmtDataGateway(DataGateway):
         mode: str = "poll",
         **kwargs: Any,
     ) -> None:
+        """轮询间隔秒、K 线除权类型、模式 poll 或 push。"""
         super().__init__(**kwargs)
         self.interval = interval
         self.dividend_type = dividend_type
@@ -50,6 +53,7 @@ class MiniQmtDataGateway(DataGateway):
         self.logger.info(f"Initialized MiniQmtDataGateway mode={self.mode} interval={self.interval}s")
 
     def connect(self) -> bool:
+        """加载 xtdata，本机需已启动 miniQMT。"""
         try:
             _import_xtdata()
             self.logger.info("xtquant xtdata loaded (ensure miniQMT is running)")
@@ -58,15 +62,67 @@ class MiniQmtDataGateway(DataGateway):
             self.logger.error(f"miniQMT connect failed: {e}")
             return False
 
+    def get_full_tick_dict(self, symbol: str) -> Dict[str, Any]:
+        """拉一次全快照字段 dict；失败或无数据返回空 dict。"""
+        tick, err = self._get_full_tick(symbol)
+        if err or not tick:
+            if err:
+                self.logger.debug(f"get_full_tick_dict {symbol}: {err}")
+            return {}
+        return dict(tick) if isinstance(tick, dict) else {}
+
     def subscribe(self, symbols: List[str]) -> bool:
+        """追加订阅；新标的用近一日 1m K 线逐根暖机回调。"""
         new_symbols = [s for s in symbols if s not in self._symbols]
         for symbol in new_symbols:
             self._symbols.append(symbol)
             self._warm_up(symbol)
         return True
 
+    def start(self) -> None:
+        """起后台线程：poll 轮询快照，push 订分笔并跑 xtdata.run。"""
+        if self._running:
+            return
+        self._running = True
+        if self.mode == "poll":
+            self.logger.info("Starting miniQMT poll loop")
+            self._thread = threading.Thread(target=self._run_poll, daemon=True)
+        else:
+            self.logger.info("Starting miniQMT subscribe_quote + xtdata.run()")
+            self._thread = threading.Thread(target=self._run_push, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """停线程；push 会退订并调 stop（若有）；join 等线程结束。"""
+        self._running = False
+        if self.mode == "push":
+            self._unsubscribe_push()
+        if self._thread:
+            self._thread.join(timeout=5.0)
+        self._thread = None
+        self.logger.info(f"Stopped MiniQmtDataGateway ({self.mode})")
+
+    def get_today_ohlc(self, symbol: str) -> Optional[Dict[str, float]]:
+        """从快照取当日开、高、低三个 float；缺或错返回 None。"""
+        tick, err = self._get_full_tick(symbol)
+        if err or not tick:
+            self.logger.warning(f"get_today_ohlc: {err}")
+            return None
+        try:
+            o = tick.get("open")
+            h = tick.get("high") or tick.get("highPrice")
+            l_ = tick.get("low") or tick.get("lowPrice")
+            if o is None or h is None or l_ is None:
+                return None
+            return {"open": float(o), "high": float(h), "low": float(l_)}
+        except Exception as e:
+            self.logger.error(f"get_today_ohlc parse error: {e}")
+            return None
+
+    # ---------- 私有 ----------
+
     def _warm_up(self, symbol: str) -> None:
-        """Replay recent 1m bars as synthetic ticks (aligned with yfinance warm-up)."""
+        """近一日 1m 收盘合成暖机 tick，来源标记 miniqmt_warmup。"""
         self.logger.debug(f"Warming up {symbol} with miniQMT 1m history...")
         try:
             end = datetime.now()
@@ -102,28 +158,8 @@ class MiniQmtDataGateway(DataGateway):
         except Exception as e:
             self.logger.warning(f"Warm-up failed for {symbol}: {e}")
 
-    def start(self) -> None:
-        if self._running:
-            return
-        self._running = True
-        if self.mode == "poll":
-            self.logger.info("Starting miniQMT poll loop")
-            self._thread = threading.Thread(target=self._run_poll, daemon=True)
-        else:
-            self.logger.info("Starting miniQMT subscribe_quote + xtdata.run()")
-            self._thread = threading.Thread(target=self._run_push, daemon=True)
-        self._thread.start()
-
-    def stop(self) -> None:
-        self._running = False
-        if self.mode == "push":
-            self._unsubscribe_push()
-        if self._thread:
-            self._thread.join(timeout=5.0)
-        self._thread = None
-        self.logger.info(f"Stopped MiniQmtDataGateway ({self.mode})")
-
     def _unsubscribe_push(self) -> None:
+        """push 停时逐个退订 quote，再调 xtdata.stop（有则调）。"""
         if not self._quote_seqs:
             return
         try:
@@ -140,26 +176,11 @@ class MiniQmtDataGateway(DataGateway):
         except Exception as e:
             self.logger.warning(f"push cleanup: {e}")
 
-    def get_today_ohlc(self, symbol: str) -> Optional[Dict[str, float]]:
-        tick, err = _get_full_tick(symbol)
-        if err or not tick:
-            self.logger.warning(f"get_today_ohlc: {err}")
-            return None
-        try:
-            o = tick.get("open")
-            h = tick.get("high") or tick.get("highPrice")
-            l_ = tick.get("low") or tick.get("lowPrice")
-            if o is None or h is None or l_ is None:
-                return None
-            return {"open": float(o), "high": float(h), "low": float(l_)}
-        except Exception as e:
-            self.logger.error(f"get_today_ohlc parse error: {e}")
-            return None
-
     def _run_poll(self) -> None:
+        """对每个标的拉全快照，组 TickData，调 tick 回调。"""
         while self._running:
             for symbol in self._symbols:
-                tick, err = _get_full_tick(symbol)
+                tick, err = self._get_full_tick(symbol)
                 if err or not tick:
                     self.logger.debug(f"tick skip {symbol}: {err}")
                     continue
@@ -168,13 +189,16 @@ class MiniQmtDataGateway(DataGateway):
                     vol = tick.get("volume") or tick.get("lastVolume") or 0
                     if last is None:
                         continue
-                    ts = _ts_from_millis_or_now(tick.get("time"))
+                    ts = self._ts_from_millis_or_now(tick.get("time"))
+                    bid, ask = self._bid_ask_from_dict(tick)
                     t = TickData(
                         symbol=symbol,
                         price=float(last),
                         timestamp=ts,
                         volume=int(vol) if vol is not None else None,
                         source="miniqmt",
+                        bid=bid,
+                        ask=ask,
                     )
                     if self._tick_handler:
                         self._tick_handler(t)
@@ -183,7 +207,8 @@ class MiniQmtDataGateway(DataGateway):
             time.sleep(self.interval)
 
     def _run_push(self) -> None:
-        # Same lifecycle as yfinance example: start() may run before subscribe(); wait for symbols.
+        """等标的有列表后逐只 subscribe_quote，最后阻塞 xd.run。"""
+        # 启动可能早于订阅，先空转等到标的非空。
         while self._running and not self._symbols:
             time.sleep(0.1)
         if not self._running:
@@ -214,6 +239,7 @@ class MiniQmtDataGateway(DataGateway):
                 self.logger.error(f"xtdata.run: {e}")
 
     def _on_push_datas(self, datas: dict) -> None:
+        """分笔推送回调：行转 TickData 再交 tick 回调。"""
         if not self._running:
             return
         for code, rows in (datas or {}).items():
@@ -224,25 +250,58 @@ class MiniQmtDataGateway(DataGateway):
                 if last is None:
                     continue
                 vol = row.get("volume") or row.get("lastVolume")
-                ts = _ts_from_millis_or_now(row.get("time"))
+                ts = self._ts_from_millis_or_now(row.get("time"))
+                bid, ask = self._bid_ask_from_dict(row)
                 t = TickData(
                     symbol=code,
                     price=float(last),
                     timestamp=ts,
                     volume=int(vol) if vol is not None else None,
                     source="miniqmt_push",
+                    bid=bid,
+                    ask=ask,
                 )
                 if self._tick_handler:
                     self._tick_handler(t)
 
+    def _get_full_tick(self, symbol: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """调 get_full_tick；成功返回快照和 None，失败返回 None 和错误说明。"""
+        try:
+            xtdata = _import_xtdata()
+            data = xtdata.get_full_tick([symbol])
+            if not data or symbol not in data:
+                return None, f"{symbol} 无快照"
+            return data[symbol], None
+        except Exception as e:
+            return None, str(e)
 
-def _ts_from_millis_or_now(raw: Any) -> datetime:
-    if raw is None:
-        return datetime.now().replace(tzinfo=None)
-    try:
-        n = int(raw)
-        if n > 10**12:
-            n = n // 1000
-        return datetime.fromtimestamp(n)
-    except (TypeError, ValueError, OSError):
-        return datetime.now().replace(tzinfo=None)
+    @staticmethod
+    def _bid_ask_from_dict(d: Dict[str, Any]) -> Tuple[Optional[float], Optional[float]]:
+        """从行情 dict 取买一卖一；若买价大于卖价则对调一次。"""
+        def _to_f(v: Any) -> Optional[float]:
+            if v is None:
+                return None
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
+        bid = d.get("bid1") or d.get("bidPrice") or d.get("bid") or d.get("bidPx")
+        ask = d.get("ask1") or d.get("askPrice") or d.get("ask") or d.get("askPx")
+        b, a = _to_f(bid), _to_f(ask)
+        if b is not None and a is not None and b > a:
+            return a, b
+        return b, a
+
+    @staticmethod
+    def _ts_from_millis_or_now(raw: Any) -> datetime:
+        """时间戳毫秒太长则按毫秒除；坏了或没有就用本机当前时间。"""
+        if raw is None:
+            return datetime.now().replace(tzinfo=None)
+        try:
+            n = int(raw)
+            if n > 10**12:
+                n = n // 1000
+            return datetime.fromtimestamp(n)
+        except (TypeError, ValueError, OSError):
+            return datetime.now().replace(tzinfo=None)

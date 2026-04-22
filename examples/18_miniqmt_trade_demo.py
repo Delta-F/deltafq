@@ -1,4 +1,4 @@
-"""miniQMT 交易演示：连接 → 查询 → 限价下单/撤单。最新价用 xtdata.get_full_tick；QMT_USERDATA_MINI、QMT_ACCOUNT_ID。"""
+"""Minimal example: miniQMT trade demo - connect → query → limit order/cancel."""
 
 import os
 import sys
@@ -8,8 +8,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from deltafq.adapters.data import MiniQmtDataGateway
 from deltafq.adapters.trade import MiniQmtTradeGateway
-from deltafq.data.miniqmt_xtdata import import_xtdata
 from deltafq.live.models import OrderRequest
 
 # 配置 miniQMT 环境变量
@@ -54,20 +54,23 @@ def run_queries(gw: MiniQmtTradeGateway) -> None:
 
 def run_orders(gw: MiniQmtTradeGateway) -> None:
     code = "000001.SZ"
-    xtdata = import_xtdata()
-    tick = (xtdata.get_full_tick([code]) or {}).get(code) or {}
+    # 获取最新价
+    data_gw = MiniQmtDataGateway(interval=3.0)
+    tick = data_gw.get_full_tick_dict(code)
     last = tick.get("lastPrice") or tick.get("last_price") or tick.get("price")
     if not last or float(last) <= 0:
         raise ValueError(f"无有效最新价: {code!r}")
     last_f = float(last)
-    delta = 0.03  # 较最新价下调比例
+    
+    # 较最新价下调比例
+    delta = 0.03
     limit_px = round(last_f * (1 - delta), 2)
     print(f"order {code} last={last} limit={limit_px} (-{delta*100}%)")
     oid = gw.send_order(OrderRequest(code, 100, limit_px, "limit"))
     print("send_order", oid)
-    # print("cancel_order", gw.cancel_order(oid))
-    # 撤销全部订单
-    sleep(5)  # 等待5秒后撤销全部订单
+
+    # 等待5秒后撤销全部订单
+    sleep(5)
     for o in gw.client.query_stock_orders(cancelable_only=True):
         print(f"cancel_order {o.order_id}")
         gw.cancel_order(o.order_id)

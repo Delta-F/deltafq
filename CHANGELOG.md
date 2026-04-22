@@ -2,6 +2,23 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [1.0.0] - 2026-04-22
+### miniQMT 实盘链路完善
+- `LiveEngine`：新增 miniQMT 柜台资金/持仓快照读取（`_account_snapshot`），支持策略 `order_quantity`（买卖统一股数上限），并在信号翻转时先判断上一挂单是否终态再决定是否撤单，降低反向误撤/误成交风险
+- `LiveEngine`：重构 Tick 处理流程（信号构建、权益记录、下单 sizing、翻转下单拆分），同时增强日志精度（价格四位小数）并在有行情字段时输出 bid/ask
+- `TickData`：新增 `bid` / `ask` 字段，支持下游策略与日志感知买一卖一
+
+### 数据与交易适配器
+- `MiniQmtDataGateway`：新增 `get_full_tick_dict(symbol)`，并在 poll/push 两种模式下统一补充 bid/ask；同时完善生命周期与 warm-up/退订相关处理
+- `MiniQmtTradeGateway`：交易网关实现迁移到 `deltafq/adapters/trade/miniqmt_gateway.py` 并调整导出路径；下单保持限价单与 `lot_size` 对齐，撤单失败时支持按合同号兜底
+- `MiniQmtXtTraderClient` 与 `miniqmt_xtdata`：补充接口说明与注释，保持交易查询与历史数据工具语义一致
+
+### 文档与示例
+- 新增 `documents/MiniQmtLiveEngineRun.md`，补充 LiveEngine + miniQMT 的分阶段上线与验证清单
+- 更新 `documents/LiveEngine.md`，明确 paper 与 miniQMT 在撮合、账户快照、撤单判定上的差异
+- 更新 `documents/MiniQmtTrade.md`，新增 `order_status` 枚举对照表，便于委托终态判断与对账
+- 示例 `19_miniqmt_live_engine.py`：新增 LiveEngine + miniQMT 行情/交易联调示例
+
 ## [0.9.1] - 2026-04-20
 - `BacktestEngine.set_parameters`：`data_source` 未传入时不再默认 `"yahoo"`，保留 `BacktestEngine(..., data_source=...)` 构造时已选数据源，避免 Yahoo 与 miniQMT 混用时被静默切回 yfinance
 

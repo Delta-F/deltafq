@@ -1,6 +1,4 @@
-"""
-Minimal example: fetch A-share OHLCV via DataFetcher with source=miniqmt (xtquant / miniQMT).
-"""
+"""Minimal example: fetch A-share OHLCV via DataFetcher with source=miniqmt (xtquant / miniQMT)."""
 
 import sys
 import os

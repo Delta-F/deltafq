@@ -1,7 +1,13 @@
 """
-实盘交易网关：``TradeGateway`` + :class:`MiniQmtXtTraderClient`。
+miniQMT 交易网关，类 MiniQmtTradeGateway。
 
-资金与持仓以柜台查询为准；本网关只负责发单/撤单及 ``order_id`` 字符串与柜台整数委托号对齐。
+对外
+    __init__      注入连接参数、策略名、委托备注、手数
+    client        暴露底层 MiniQmtXtTraderClient，便于查询柜台数据
+    connect       连接 miniQMT 交易端
+    stop          断开连接并清理
+    send_order    接收统一 OrderRequest，转柜台限价单并返回字符串委托号
+    cancel_order  按委托号撤单，失败时按合同号兜底再撤
 """
 
 from __future__ import annotations
@@ -17,12 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class MiniQmtTradeGateway(TradeGateway):
-    """
-    miniQMT 实盘交易网关。
-
-    - ``send_order`` / ``cancel_order`` 满足 :class:`LiveEngine` 与回测一致的调用方式。
-    - 查询资金、持仓、委托、成交请使用 :attr:`client` 上对应方法。
-    """
+    """连接 miniQMT 并适配 LiveEngine 的下单撤单接口。"""
 
     def __init__(
         self,
@@ -33,6 +34,7 @@ class MiniQmtTradeGateway(TradeGateway):
         order_remark: str = "",
         lot_size: int = 100,
     ) -> None:
+        """初始化柜台参数；lot_size 用于数量对齐，默认按 A 股 100 股一手。"""
         self._strategy_name = strategy_name
         self._order_remark = order_remark
         self._lot_size = max(1, int(lot_size))
@@ -44,15 +46,19 @@ class MiniQmtTradeGateway(TradeGateway):
 
     @property
     def client(self) -> MiniQmtXtTraderClient:
+        """底层交易客户端；可直接查资金、持仓、委托、成交。"""
         return self._client
 
     def connect(self) -> bool:
+        """连接交易端并订阅资金账号。"""
         return self._client.connect()
 
     def stop(self) -> None:
+        """断开交易端连接。"""
         self._client.disconnect()
 
     def send_order(self, req: OrderRequest) -> str:
+        """仅支持限价单；数量按 lot_size 向下对齐；返回字符串委托号。"""
         if req.order_type != "limit":
             raise ValueError("MiniQmtTradeGateway currently supports limit orders only (order_type=limit)")
         qty = int(req.quantity)
@@ -79,6 +85,7 @@ class MiniQmtTradeGateway(TradeGateway):
         return str(int(oid))
 
     def cancel_order(self, order_id: str) -> bool:
+        """先按委托号撤；失败则在可撤委托里查合同号并兜底撤单。"""
         try:
             oid = int(str(order_id).strip())
         except ValueError:

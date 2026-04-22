@@ -1,11 +1,4 @@
-"""
-miniQMT 行情 live：``MiniQmtDataGateway`` + EventEngine（对齐 ``12_yfinance_live_push``）。
-
-- ``mode="poll"``：``get_full_tick`` 轮询（默认，与 yfinance 轮询形态一致）。
-- ``mode="push"``：``subscribe_quote`` + ``xtdata.run()``，分笔更密（尽量在交易时段试）。
-
-需本机启动 miniQMT、已安装 xtquant；标的为 xt 代码，如 000001.SZ。
-"""
+"""Minimal example: live push via DataGateway with source=miniqmt (xtquant / miniQMT)."""
 
 import sys
 import os
@@ -38,8 +31,9 @@ def main():
         else:
             vol = t.volume if t.volume is not None else "-"
             src = t.source or ""
+            px = f"{float(t.price):.3f}"
             print(
-                f"[Live]    {t.symbol} -> {t.price} | Vol: {vol} "
+                f"[Live]    {t.symbol} -> {px} | Vol: {vol} "
                 f"({t.timestamp.strftime('%H:%M:%S')}) [{src}]"
             )
 
@@ -51,7 +45,7 @@ def main():
 
     gateway.start()
 
-    symbols = ["000001.SZ", "600000.SH"]
+    symbols = ["000001.SZ", "600000.SH","159118.SZ"]
     print(f"\n>>> Subscribing to {symbols} (includes historical warm-up), mode={MODE!r}...")
     gateway.subscribe(symbols)
 

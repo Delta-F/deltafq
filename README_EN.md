@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-0.9.1-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -99,26 +99,59 @@ engine.set_trade_gateway(
 )
 ```
 
-See details: `documents/MiniQmtTrade.md`
+See details:
+- `documents/LiveEngine.md`
+- `documents/MiniQmtTrade.md`
+- `documents/MiniQmtLiveEngineRun.md`
 
 
 ## 🏗️ Project Architecture
 
 ```
 deltafq/
-├── data        # Data acquisition, cleaning, storage interfaces (stocks, funds)
-├── indicators  # Technical indicators and factor calculations
-├── strategy    # Signal generators and strategy base classes
-├── backtest    # Backtest execution, performance metrics, reporting
-├── live        # Event engine, gateway abstraction, routing
-├── adapters    # Pluggable data/trade adapters
-├── trader      # Execution with order/position management
-└── charts      # Signal/performance chart components
-
-documents/      # Usage guides and architecture docs
-├── LiveEngine.md
-├── MiniQmtTrade.md
-└── BacktestEngine.md
+├── core/                          # Base classes, config, logging
+│   ├── base.py
+│   ├── config.py
+│   └── logger.py
+├── data/                          # Fetch, clean, store, source mapping
+│   ├── fetcher.py
+│   ├── cleaner.py
+│   ├── storage.py
+│   ├── source_map.py
+│   └── miniqmt_xtdata.py          # miniQMT / xtquant historical bars
+├── indicators/                    # Technical & fundamental factors
+│   ├── technical.py
+│   ├── fundamental.py
+│   └── talib_indicators.py
+├── strategy/                      # Strategy base & signal generation
+│   ├── base.py
+│   └── signals.py
+├── backtest/                      # Backtest engine, metrics, reporting
+│   ├── engine.py
+│   ├── metrics.py
+│   └── performance.py
+├── live/                          # Event engine, gateways, LiveEngine
+│   ├── event_engine.py
+│   ├── gateways.py                # DataGateway / TradeGateway abstractions
+│   ├── gateway_registry.py        # Gateway factory & registry
+│   ├── engine.py                  # LiveEngine orchestration
+│   └── models.py                  # TickData, OrderRequest, …
+├── adapters/                      # Pluggable data / trade adapters
+│   ├── data/                      # Data gateways (yfinance, miniQMT, …)
+│   │   ├── yfinance_gateway.py
+│   │   └── miniqmt_gateway.py
+│   └── trade/                     # Trade gateways (Paper, miniQMT, …)
+│       ├── paper_gateway.py
+│       ├── miniqmt_client.py      # xttrader client wrapper
+│       └── miniqmt_gateway.py     # Limit orders / cancel for LiveEngine
+├── trader/                        # Matching, orders, positions
+│   ├── engine.py
+│   ├── order_manager.py
+│   └── position_manager.py
+└── charts/                        # Signal, price & performance charts
+    ├── signals.py
+    ├── price.py
+    └── performance.py
 ```
 
 <table align="center">
