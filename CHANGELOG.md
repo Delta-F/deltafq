@@ -14,7 +14,7 @@
 - `MiniQmtXtTraderClient` 与 `miniqmt_xtdata`：补充接口说明与注释，保持交易查询与历史数据工具语义一致
 
 ### 文档与示例
-- 新增 `documents/MiniQmtLiveEngineRun.md`，补充 LiveEngine + miniQMT 的分阶段上线与验证清单
+- 新增 `documents/MiniQmtLiveEngine.md`，补充 LiveEngine + miniQMT 的分阶段上线与验证清单
 - 更新 `documents/LiveEngine.md`，明确 paper 与 miniQMT 在撮合、账户快照、撤单判定上的差异
 - 更新 `documents/MiniQmtTrade.md`，新增 `order_status` 枚举对照表，便于委托终态判断与对账
 - 示例 `19_miniqmt_live_engine.py`：新增 LiveEngine + miniQMT 行情/交易联调示例
