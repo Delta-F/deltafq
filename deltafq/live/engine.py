@@ -490,7 +490,7 @@ class LiveEngine(BaseComponent):
         return _SizingLogResult(action_key, action, qty, sell_order_qty)
 
     def _handle_signal_transition(
-        self, signal: int, px: float, position: int, sizing: _SizingLogResult
+        self, signal: int, px: float, position: int, sizing: _SizingLogResult, tick: Any
     ) -> None:
         """相对 _last_signal 发生变化时：尝试撤上一笔挂单，再按规则下限价单。"""
         last = self._last_signal
@@ -512,16 +512,20 @@ class LiveEngine(BaseComponent):
 
         if signal == 1 and last <= 0:
             if sizing.qty > 0:
-                req = OrderRequest(symbol=self.symbol, quantity=sizing.qty, price=px, order_type="limit")
+                buy_px = float(getattr(tick, "ask", None)) if getattr(tick, "ask", None) is not None else px
+                req = OrderRequest(symbol=self.symbol, quantity=sizing.qty, price=buy_px, order_type="limit")
                 self._last_pending_order_id = self._trade_gw.send_order(req)
+                self.logger.info(f"Order sent: BUY [{self.symbol}] qty={sizing.qty} @ {buy_px:.4f}")
         elif signal == -1 and last >= 0 and position > 0:
             if sizing.sell_order_qty <= 0:
                 self._last_signal = signal
                 return
+            sell_px = float(getattr(tick, "bid", None)) if getattr(tick, "bid", None) is not None else px
             req = OrderRequest(
-                symbol=self.symbol, quantity=-sizing.sell_order_qty, price=px, order_type="limit"
+                symbol=self.symbol, quantity=-sizing.sell_order_qty, price=sell_px, order_type="limit"
             )
             self._last_pending_order_id = self._trade_gw.send_order(req)
+            self.logger.info(f"Order sent: SELL [{self.symbol}] qty={sizing.sell_order_qty} @ {sell_px:.4f}")
 
         self._last_signal = signal
 
@@ -560,4 +564,4 @@ class LiveEngine(BaseComponent):
             signal, px, cash, position, commission, self._last_signal, order_quantity, order_amount
         )
 
-        self._handle_signal_transition(signal, px, position, sizing)
+        self._handle_signal_transition(signal, px, position, sizing, tick)

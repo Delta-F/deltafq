@@ -281,6 +281,8 @@ class MiniQmtDataGateway(DataGateway):
         def _to_f(v: Any) -> Optional[float]:
             if v is None:
                 return None
+            if isinstance(v, (list, tuple)) and len(v) > 0:
+                v = v[0]
             try:
                 return float(v)
             except (TypeError, ValueError):
