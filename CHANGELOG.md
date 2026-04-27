@@ -2,6 +2,17 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [1.0.2] - 2026-04-27
+### DataGateway 接口补全与深度行情统一
+- `DataGateway`：新增 `emit_tick()` 主动分发接口，并将 `get_today_ohlc()` / `get_depths()` 作为统一抽象能力，明确网关最小公开 API
+- `MiniQmtDataGateway`：移除 `get_full_tick_dict()`，新增 `get_depths(symbol, levels)`，兼容数组字段与逐档字段两种快照格式，统一返回 `bids/asks` 深度结构
+- `YFinanceDataGateway`：新增 `get_depths(symbol, levels)`（基于 `fast_info` 的合成盘口），并整理类注释与方法说明，保持与 DataGateway 抽象一致
+
+### 示例同步
+- 示例 `18_miniqmt_trade_demo.py`：下单前改为通过 Tick 回调获取最新价，不再依赖全快照字段直读
+- 示例 `20_data_gateway_tpl.py`：新增 DataGateway 公开 API 烟测模板（`get_today_ohlc` / `get_depths` / `emit_tick` / `start` / `subscribe` / `stop`）
+- 删除示例 `20_miniqmt_ask_bid.py`（能力已由统一 `get_depths` 与模板示例覆盖）
+
 ## [1.0.1] - 2026-04-24
 ### miniQMT 基于 bid/ask 下单完善
 - `MiniQmtDataGateway`：增强 tick 数值兼容逻辑，`_to_f` 现在可处理 `list/tuple` 形式字段（取首值后再转换），降低不同柜台返回格式导致的解析失败风险

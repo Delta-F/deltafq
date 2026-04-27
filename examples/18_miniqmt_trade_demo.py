@@ -3,6 +3,7 @@
 import os
 import sys
 from time import sleep
+import threading
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -10,7 +11,7 @@ if project_root not in sys.path:
 
 from deltafq.adapters.data import MiniQmtDataGateway
 from deltafq.adapters.trade import MiniQmtTradeGateway
-from deltafq.live.models import OrderRequest
+from deltafq.live.models import OrderRequest, TickData
 
 # 配置 miniQMT 环境变量
 MIN_PATH = os.environ.get("QMT_USERDATA_MINI", r"D:\国金证券QMT交易端\userdata_mini")
@@ -54,18 +55,32 @@ def run_queries(gw: MiniQmtTradeGateway) -> None:
 
 def run_orders(gw: MiniQmtTradeGateway) -> None:
     code = "000001.SZ"
-    # 获取最新价
-    data_gw = MiniQmtDataGateway(interval=3.0)
-    tick = data_gw.get_full_tick_dict(code)
-    last = tick.get("lastPrice") or tick.get("last_price") or tick.get("price")
-    if not last or float(last) <= 0:
+    # 通过 tick 回调获取最新价
+    data_gw = MiniQmtDataGateway(interval=1.0, mode="poll")
+    if not data_gw.connect():
+        raise ValueError("行情网关连接失败")
+    done = threading.Event()
+    latest = {"price": None}
+
+    def on_tick(tick: TickData) -> None:
+        if tick.symbol != code:
+            return
+        latest["price"] = float(tick.price)
+        done.set()
+
+    data_gw.set_tick_handler(on_tick)
+    data_gw.start()
+    data_gw.subscribe([code])
+    ok = done.wait(timeout=5.0)
+    data_gw.stop()
+    if not ok or latest["price"] is None or latest["price"] <= 0:
         raise ValueError(f"无有效最新价: {code!r}")
-    last_f = float(last)
+    last_f = float(latest["price"])
     
     # 较最新价下调比例
     delta = 0.03
     limit_px = round(last_f * (1 - delta), 2)
-    print(f"order {code} last={last} limit={limit_px} (-{delta*100}%)")
+    print(f"order {code} last={last_f} limit={limit_px} (-{delta*100}%)")
     oid = gw.send_order(OrderRequest(code, 100, limit_px, "limit"))
     print("send_order", oid)
 

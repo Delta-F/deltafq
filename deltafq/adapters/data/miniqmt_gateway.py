@@ -3,11 +3,11 @@ miniQMT 行情（xtdata），类 MiniQmtDataGateway。
 
 对外
     connect              加载 xtdata，需 miniQMT 已开
-    get_full_tick_dict   单次全快照 dict，可不先 start
     subscribe            追加标的并 1m 暖机回放
     start                开 daemon：poll 轮询或 push 订分笔
     stop                 停线程，push 会退订
     get_today_ohlc       当日开高低（从快照解析）
+    get_depths           买卖盘口（从快照解析）
 
 私有
     _warm_up             近一日 1m 合成暖机 tick
@@ -62,15 +62,6 @@ class MiniQmtDataGateway(DataGateway):
             self.logger.error(f"miniQMT connect failed: {e}")
             return False
 
-    def get_full_tick_dict(self, symbol: str) -> Dict[str, Any]:
-        """拉一次全快照字段 dict；失败或无数据返回空 dict。"""
-        tick, err = self._get_full_tick(symbol)
-        if err or not tick:
-            if err:
-                self.logger.debug(f"get_full_tick_dict {symbol}: {err}")
-            return {}
-        return dict(tick) if isinstance(tick, dict) else {}
-
     def subscribe(self, symbols: List[str]) -> bool:
         """追加订阅；新标的用近一日 1m K 线逐根暖机回调。"""
         new_symbols = [s for s in symbols if s not in self._symbols]
@@ -118,6 +109,27 @@ class MiniQmtDataGateway(DataGateway):
         except Exception as e:
             self.logger.error(f"get_today_ohlc parse error: {e}")
             return None
+
+    def get_depths(self, symbol: str, levels: int = 5) -> Dict[str, List[Dict[str, float]]]:
+        """返回买卖盘口深度（价格+委托量）。"""
+        tick, err = self._get_full_tick(symbol)
+        if err or not tick:
+            self.logger.debug(f"get_depths {symbol}: {err}")
+            return {"bids": [], "asks": []}
+        lv = max(1, min(int(levels), 10))
+        bids: List[Dict[str, float]] = []
+        asks: List[Dict[str, float]] = []
+
+        for i in range(1, lv + 1):
+            bp = self._level_value(tick, "bid", "price", i)
+            bv = self._level_value(tick, "bid", "volume", i)
+            ap = self._level_value(tick, "ask", "price", i)
+            av = self._level_value(tick, "ask", "volume", i)
+            if bp is not None:
+                bids.append({"level": float(i), "price": bp, "volume": float(bv or 0.0)})
+            if ap is not None:
+                asks.append({"level": float(i), "price": ap, "volume": float(av or 0.0)})
+        return {"bids": bids, "asks": asks}
 
     # ---------- 私有 ----------
 
@@ -294,6 +306,45 @@ class MiniQmtDataGateway(DataGateway):
         if b is not None and a is not None and b > a:
             return a, b
         return b, a
+
+    @classmethod
+    def _level_value(cls, d: Dict[str, Any], side: str, kind: str, idx: int) -> Optional[float]:
+        """取指定档位字段，兼容数组字段和逐档字段。"""
+        if side == "bid":
+            arr_keys = ["bidPrice", "bid", "bidPx"] if kind == "price" else ["bidVol", "bidVolume", "bidQty"]
+            scalar_keys = (
+                [f"bid{idx}", f"bidPrice{idx}", f"bidPx{idx}"]
+                if kind == "price"
+                else [f"bidVol{idx}", f"bidVolume{idx}", f"bidQty{idx}"]
+            )
+        else:
+            arr_keys = ["askPrice", "ask", "askPx"] if kind == "price" else ["askVol", "askVolume", "askQty"]
+            scalar_keys = (
+                [f"ask{idx}", f"askPrice{idx}", f"askPx{idx}"]
+                if kind == "price"
+                else [f"askVol{idx}", f"askVolume{idx}", f"askQty{idx}"]
+            )
+
+        for key in arr_keys:
+            arr = d.get(key)
+            if isinstance(arr, (list, tuple)) and len(arr) >= idx:
+                return cls._to_float(arr[idx - 1])
+        for key in scalar_keys:
+            if key in d:
+                return cls._to_float(d.get(key))
+        return None
+
+    @staticmethod
+    def _to_float(v: Any) -> Optional[float]:
+        """将任意值转为 float，失败返回 None。"""
+        if v is None:
+            return None
+        if isinstance(v, (list, tuple)) and len(v) > 0:
+            v = v[0]
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _ts_from_millis_or_now(raw: Any) -> datetime:
