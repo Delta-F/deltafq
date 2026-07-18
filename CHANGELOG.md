@@ -2,6 +2,11 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [1.1.0] - 2026-07-18
+- `DataFetcher(source="baostock")`：A 股历史 OHLCV（`adapters/data/baostock_bars.py`）
+- 历史 K 线适配迁入 `adapters/data/`（`miniqmt_bars` / `baostock_bars`），与 `*_gateway` 并列
+- 示例 `21_baostock_test.py`
+
 ## [1.0.2] - 2026-04-27
 ### DataGateway 接口补全与深度行情统一
 - `DataGateway`：新增 `emit_tick()` 主动分发接口，并将 `get_today_ohlc()` / `get_depths()` 作为统一抽象能力，明确网关最小公开 API

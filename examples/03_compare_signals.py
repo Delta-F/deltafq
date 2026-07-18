@@ -17,7 +17,7 @@ from deltafq.strategy import SignalGenerator
 
 
 def main() -> None:
-    fetcher = DataFetcher()
+    fetcher = DataFetcher() # source="yahoo" as default / "baostock" / "miniqmt"
     indicators = TechnicalIndicators()
     signals = SignalGenerator()
 

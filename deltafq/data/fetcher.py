@@ -3,6 +3,7 @@ Data fetching for DeltaFQ.
 
 - yahoo: yfinance api
 - miniQMT: xtquant api, requires a running miniQMT terminal
+- baostock: baostock api (A-share historical K-line)
 - eastmoney: eastmoney api
 """
 
@@ -37,8 +38,12 @@ class DataFetcher(BaseComponent):
         """Fetch stock data. interval: e.g. '1m', '1h', '1d' (default), '1wk', '1mo'."""
         try:
             self.logger.info(f"Fetching data for {symbol} from {start_date} to {end_date}, interval={interval}")
-            if self.source == "miniqmt":
-                from .miniqmt_xtdata import fetch_miniqmt_bars
+            if self.source == "baostock":
+                from ..adapters.data.baostock_bars import fetch_baostock_bars
+
+                data = fetch_baostock_bars(symbol, start_date, end_date, interval=interval)
+            elif self.source == "miniqmt":
+                from ..adapters.data.miniqmt_bars import fetch_miniqmt_bars
 
                 data = fetch_miniqmt_bars(symbol, start_date, end_date, interval=interval)
             else:

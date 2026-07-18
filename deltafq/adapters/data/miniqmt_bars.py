@@ -1,5 +1,5 @@
 """
-miniQMT 历史 K 线数据工具（xtdata）。
+miniQMT 历史 K 线适配（xtdata）。
 
 对外
     import_xtdata          导入 xtdata，缺依赖时报错

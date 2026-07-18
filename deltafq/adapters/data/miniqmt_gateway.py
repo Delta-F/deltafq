@@ -24,7 +24,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from ...data.miniqmt_xtdata import fetch_miniqmt_bars, import_xtdata as _import_xtdata
+from .miniqmt_bars import fetch_miniqmt_bars, import_xtdata as _import_xtdata
 from ...live.gateways import DataGateway
 from ...live.models import TickData
 

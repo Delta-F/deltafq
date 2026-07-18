@@ -37,7 +37,7 @@ class DemoStrategy(BaseStrategy):
 def run_strategy_demo() -> None:
     print("=== BaseStrategy Demo Strategy ===")
 
-    fetcher = DataFetcher()
+    fetcher = DataFetcher() # source="yahoo" as default / "baostock" / "miniqmt"
     strategy = DemoStrategy(name="DemoStrategy", fast_period=10, slow_period=30)
 
     data = fetcher.fetch_data(

@@ -36,7 +36,7 @@ class SimpleMAStrategy(BaseStrategy):
 
 def main() -> None:
     # initialize backtest engine
-    engine = BacktestEngine()
+    engine = BacktestEngine() # data_source="yahoo" as default / "baostock" / "miniqmt"
     
     # set parameters
     engine.set_parameters(

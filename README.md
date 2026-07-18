@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-1.0.2-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -81,6 +81,7 @@ DeltaFStation 基于 deltafq 的开源量化交易云平台，集成数据服务
 
 - [Data] yfinance ✅ - 美股、A股、港股、加密、股指
 - [Data] eastmoney ✅ - 场外基金（指数、QDII、股、债、混合）
+- [Data] baostock ✅ - A 股历史 K 线（日/周/月及 5/15/30/60 分钟）
 - [Data] miniQMT ✅ - A 股行情接入（详情见课程实盘章节）
 - [Trade] PaperTrade ✅ - 本地模拟交易、挂单按 Tick 撮合、持仓与订单管理
 - [Trade] miniQMT Trade ✅ - A 股实盘交易（详情见课程实盘章节）
@@ -113,12 +114,11 @@ deltafq/
 │   ├── base.py
 │   ├── config.py
 │   └── logger.py
-├── data/                          # 拉数、清洗、存储与数据源映射
+├── data/                          # 拉数编排、清洗、存储与数据源映射
 │   ├── fetcher.py
 │   ├── cleaner.py
 │   ├── storage.py
-│   ├── source_map.py
-│   └── miniqmt_xtdata.py          # miniQMT / xtquant 历史 K 线
+│   └── source_map.py
 ├── indicators/                    # 技术指标与基本面因子
 │   ├── technical.py
 │   ├── fundamental.py
@@ -137,9 +137,11 @@ deltafq/
 │   ├── engine.py                  # LiveEngine 实盘编排
 │   └── models.py                  # TickData、OrderRequest 等
 ├── adapters/                      # 可插拔行情 / 交易适配
-│   ├── data/                      # 数据网关（yfinance、miniQMT 等）
-│   │   ├── yfinance_gateway.py
-│   │   └── miniqmt_gateway.py
+│   ├── data/                      # 数据源适配（历史 bars + 实时 gateway）
+│   │   ├── baostock_bars.py       # baostock 历史 K 线
+│   │   ├── miniqmt_bars.py        # miniQMT / xtquant 历史 K 线
+│   │   ├── miniqmt_gateway.py     # miniQMT 实时行情
+│   │   └── yfinance_gateway.py    # yfinance 实时行情
 │   └── trade/                     # 交易网关（Paper、miniQMT 等）
 │       ├── paper_gateway.py
 │       ├── miniqmt_client.py      # xttrader 交易封装

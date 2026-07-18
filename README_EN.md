@@ -4,7 +4,7 @@
 
 [中文](README.md) | [English](README_EN.md)
 
-![Version](https://img.shields.io/badge/version-1.0.2-7C3AED.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-7C3AED.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-D97706.svg)
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-2563EB.svg)
 ![Build](https://img.shields.io/badge/build-manual-lightgrey.svg)
@@ -81,6 +81,7 @@ DeltaFStation is an open-source quantitative trading cloud platform based on del
 
 - [Data] yfinance ✅ - US, A-shares, HK, Crypto, Indices
 - [Data] eastmoney ✅ - OTC Funds (Index, QDII, Stock, Bond, Mixed)
+- [Data] baostock ✅ - A-share historical K-line (daily/weekly/monthly and 5/15/30/60m)
 - [Data] miniQMT ✅ - A-share market data integration (see live trading section in the course)
 - [Trade] PaperTrade ✅ - Local simulation, tick-driven order matching, position and order management
 - [Trade] miniQMT Trade ✅ - A-share live trading (see live trading section in the course)
@@ -113,12 +114,11 @@ deltafq/
 │   ├── base.py
 │   ├── config.py
 │   └── logger.py
-├── data/                          # Fetch, clean, store, source mapping
+├── data/                          # Fetch orchestration, clean, store, source mapping
 │   ├── fetcher.py
 │   ├── cleaner.py
 │   ├── storage.py
-│   ├── source_map.py
-│   └── miniqmt_xtdata.py          # miniQMT / xtquant historical bars
+│   └── source_map.py
 ├── indicators/                    # Technical & fundamental factors
 │   ├── technical.py
 │   ├── fundamental.py
@@ -137,9 +137,11 @@ deltafq/
 │   ├── engine.py                  # LiveEngine orchestration
 │   └── models.py                  # TickData, OrderRequest, …
 ├── adapters/                      # Pluggable data / trade adapters
-│   ├── data/                      # Data gateways (yfinance, miniQMT, …)
-│   │   ├── yfinance_gateway.py
-│   │   └── miniqmt_gateway.py
+│   ├── data/                      # Source adapters (historical bars + live gateways)
+│   │   ├── baostock_bars.py       # baostock historical K-line
+│   │   ├── miniqmt_bars.py        # miniQMT / xtquant historical K-line
+│   │   ├── miniqmt_gateway.py     # miniQMT live quotes
+│   │   └── yfinance_gateway.py    # yfinance live quotes
 │   └── trade/                     # Trade gateways (Paper, miniQMT, …)
 │       ├── paper_gateway.py
 │       ├── miniqmt_client.py      # xttrader client wrapper

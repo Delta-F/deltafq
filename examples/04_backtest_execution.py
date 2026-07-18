@@ -14,7 +14,7 @@ from deltafq.backtest import BacktestEngine
 
 
 def main() -> None:
-    fetcher = DataFetcher()
+    fetcher = DataFetcher() # source="yahoo" as default / "baostock" / "miniqmt"
     indicators = TechnicalIndicators()
     generator = SignalGenerator()
     engine = BacktestEngine(initial_capital=10000, commission=0.0005) # default initial_capital=1000000, commission=0.001
