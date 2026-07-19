@@ -381,7 +381,7 @@ class LiveEngine(BaseComponent):
 
     def _on_tick_match(self, tick: Any) -> None:
         """非 warmup：打 Tick 日志；若网关带执行引擎则转发 on_tick 做限价撮合。"""
-        if getattr(tick, "source", None) not in ("yf_warmup", "miniqmt_warmup"):
+        if getattr(tick, "source", None) not in ("yf_warmup", "miniqmt_warmup", "baostock_warmup"):
             t = tick.timestamp
             ts = t.strftime("%H:%M:%S")
             v = tick.volume
@@ -531,7 +531,7 @@ class LiveEngine(BaseComponent):
 
     def _on_tick_strategy(self, tick: Any) -> None:
         """编排：建 df → 信号 → 账户快照 → 权益 → sizing 与日志 → 信号翻转时撤单/下单。"""
-        if getattr(tick, "source", None) in ("yf_warmup", "miniqmt_warmup"):
+        if getattr(tick, "source", None) in ("yf_warmup", "miniqmt_warmup", "baostock_warmup"):
             return
         if tick.symbol != self.symbol or self._strategy is None:
             return

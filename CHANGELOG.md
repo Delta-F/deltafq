@@ -2,6 +2,10 @@
 
 项目遵循语义化版本，此处简要记录关键变化。
 
+## [1.1.1] - 2026-07-19
+- `BaostockDataGateway`：轮询 5m K 线模拟实时 Tick；`create_data_gateway("baostock")`
+- LiveEngine warmup 支持 `baostock_warmup`；示例 `21_baostock_test.py` 覆盖历史 + 行情烟测
+
 ## [1.1.0] - 2026-07-18
 - `DataFetcher(source="baostock")`：A 股历史 OHLCV（`adapters/data/baostock_bars.py`）
 - 历史 K 线适配迁入 `adapters/data/`（`miniqmt_bars` / `baostock_bars`），与 `*_gateway` 并列

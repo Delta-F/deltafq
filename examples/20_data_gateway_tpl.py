@@ -12,10 +12,10 @@ from deltafq.live import create_data_gateway
 from deltafq.live.gateways import DataGateway
 from deltafq.live.models import TickData
 
-NAME = "miniqmt"  # "yfinance" | "miniqmt"
-SYMBOL = "600000.SH" # "AAPL" | "600000.SH"
+NAME = "miniqmt"  # "yfinance" | "miniqmt" | "baostock"
+SYMBOL = "600000.SH" # "AAPL" | "600000.SH" | "sh.600000"
 
-_LIVE = {"yfinance": ("yfinance",), "miniqmt": ("miniqmt", "miniqmt_push")}
+_LIVE = {"yfinance": ("yfinance",), "miniqmt": ("miniqmt", "miniqmt_push"), "baostock": ("baostock",)}
 
 
 def sec(t: str) -> None:

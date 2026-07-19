@@ -7,6 +7,7 @@ from typing import Dict
 _GATEWAY_TO_FETCHER: Dict[str, str] = {
     "yfinance": "yahoo",
     "miniqmt": "miniqmt",
+    "baostock": "baostock",
 }
 
 
@@ -16,6 +17,7 @@ def fetcher_source_for_data_gateway(gateway_name: str) -> str:
 
     - ``yfinance`` gateway -> ``yahoo`` fetcher (yfinance)
     - ``miniqmt`` gateway -> ``miniqmt`` fetcher (xtquant / miniQMT)
+    - ``baostock`` gateway -> ``baostock`` fetcher
     """
     if gateway_name not in _GATEWAY_TO_FETCHER:
         raise ValueError(
